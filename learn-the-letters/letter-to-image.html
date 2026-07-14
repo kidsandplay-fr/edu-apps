@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Letter to Image!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body { font-family: 'Baloo 2', cursive; background: linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; touch-action: none; }
+        :lang(el) body, :lang(el) h1, :lang(el) .item-text, :lang(el) button, :lang(el) select, :lang(el) #back-btn, :lang(el) .word-toast { font-family: 'Arial', sans-serif !important; }
+        #back-btn { position: absolute; top: 20px; left: 20px; z-index: 20; padding: 8px 16px; font-size: 1.2rem; text-decoration: none; background: #FF924C; color: white; border-radius: 20px; border: 2px solid #FFF; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        #back-btn:hover { transform: scale(1.05); }
+        #controls { position: absolute; top: 20px; right: 20px; z-index: 20; }
+        #lang-select { padding: 8px 16px; font-family: inherit; font-size: 1.2rem; font-weight: bold; border-radius: 20px; border: 2px solid #FFF; background: #1982C4; color: white; cursor: pointer; outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        #lang-select:hover { transform: scale(1.05); }
+        h1 { color: #FF595E; font-size: 3rem; text-shadow: 2px 2px 0px #FFF, 4px 4px 0px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; z-index: 10; }
+        .game-wrapper { position: relative; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border-radius: 30px; padding: 30px; box-shadow: var(--shadow); border: 4px solid #FFF; width: 90%; max-width: 800px; height: 60vh; min-height: 400px; }
+        .board { display: flex; justify-content: space-between; height: 100%; position: relative; }
+        #drawing-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+        .column { display: flex; flex-direction: column; justify-content: space-between; width: 40%; height: 100%; z-index: 10; }
+        .item { background: #FFF; border-radius: 20px; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 3px solid transparent; transition: transform 0.2s, box-shadow 0.2s; position: relative; height: 16%; cursor: pointer; }
+        .item:hover { transform: scale(1.02); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+        .item.solved { opacity: 0.7; transform: scale(0.98); }
+        .item-content { flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+        .item-icon { font-size: 3.5rem; }
+        .item-text { font-size: 2.5rem; font-weight: 800; color: #444; }
+        .node { width: 24px; height: 24px; border-radius: 50%; background: #E0E0E0; border: 4px solid #FFF; box-shadow: 0 2px 4px rgba(0,0,0,0.2); pointer-events: auto; transition: all 0.2s; cursor: pointer; }
+        .left-col .node { margin-left: 15px; }
+        .right-col .node { margin-right: 15px; }
+        .right-col .item { flex-direction: row-reverse; }
+        .word-toast { position: absolute; top: -45px; left: 50%; transform: translateX(-50%); background: #1982C4; color: white; padding: 8px 18px; border-radius: 20px; font-size: 1.5rem; font-weight: 800; pointer-events: none; opacity: 0; transition: opacity 0.3s ease-in-out; z-index: 100; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 2px solid #FFF; }
+        .word-toast.show { opacity: 1; }
+        #success-message { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); border-radius: 30px; z-index: 20; flex-direction: column; align-items: center; justify-content: center; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #success-message h2 { font-size: 4rem; color: #8AC926; margin-bottom: 20px; }
+        button { padding: 15px 30px; font-size: 1.5rem; font-family: inherit; font-weight: bold; color: white; background: #1982C4; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 6px 0 #115D8C; }
+        button:active { transform: translateY(6px); box-shadow: none; }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @media (max-width: 600px) { .item-text { font-size: 2rem; } .item-icon { font-size: 2.5rem; } .node { width: 20px; height: 20px; } h1 { font-size: 2rem; margin-top: 40px; } .word-toast { font-size: 1.2rem; top: -35px; } }
+    </style>
+</head>
+<body lang="en">
+
+    <a href="index.html" id="back-btn">🏠</a>
+
+    <div id="controls">
+        <select id="lang-select">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="el">Ελληνικά</option>
+        </select>
+    </div>
+
+    <h1 id="game-title">Letter to Image!</h1>
+
+    <div class="game-wrapper" id="game-wrapper">
+        <canvas id="drawing-layer"></canvas>
+        <div class="board">
+            <div class="column left-col" id="left-col"></div>
+            <div class="column right-col" id="right-col"></div>
+        </div>
+        <div id="success-message">
+            <h2 id="success-text">Great Job! 🎉</h2>
+            <button id="replay-btn" onclick="initGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const dictionaries = {
+            en: { "a": { i: "🍎", w: "Apple" }, "b": { i: "🐻", w: "Bear" }, "c": { i: "🐱", w: "Cat" }, "d": { i: "🐶", w: "Dog" }, "e": { i: "🐘", w: "Elephant" }, "f": { i: "🐸", w: "Frog" }, "g": { i: "🦒", w: "Giraffe" }, "h": { i: "🚁", w: "Helicopter" }, "i": { i: "🌡️", w: "Thermometer" }, "j": { i: "🧃", w: "Juice" }, "k": { i: "🦘", w: "Kangaroo" }, "l": { i: "🦁", w: "Lion" }, "m": { i: "🐒", w: "Monkey" }, "n": { i: "🥜", w: "Nut" }, "o": { i: "🐙", w: "Octopus" }, "p": { i: "🐧", w: "Penguin" }, "q": { i: "👑", w: "Queen" }, "r": { i: "🚀", w: "Rocket" }, "s": { i: "☀️", w: "Sun" }, "t": { i: "🐯", w: "Tiger" }, "u": { i: "☂️", w: "Umbrella" }, "v": { i: "🌋", w: "Volcano" }, "w": { i: "🍉", w: "Watermelon" }, "x": { i: "❌", w: "X" }, "y": { i: "🧶", w: "Yarn" }, "z": { i: "🦓", w: "Zebra" } },
+            fr: { "a": { i: "🐝", w: "Abeille" }, "b": { i: "🐳", w: "Baleine" }, "c": { i: "🐞", w: "Coccinelle" }, "d": { i: "🐬", w: "Dauphin" }, "e": { i: "🐘", w: "Éléphant" }, "f": { i: "🍓", w: "Fraise" }, "g": { i: "🦒", w: "Girafe" }, "h": { i: "🚁", w: "Hélicoptère" }, "i": { i: "❌", w: "X" }, "j": { i: "🧃", w: "Jus" }, "k": { i: "🥝", w: "Kiwi" }, "l": { i: "🦁", w: "Lion" }, "m": { i: "🐑", w: "Mouton" }, "n": { i: "☁️", w: "Nuage" }, "o": { i: "🦭", w: "Otarie" }, "p": { i: "🍎", w: "Pomme" }, "q": { i: "🎳", w: "Quille" }, "r": { i: "🦊", w: "Renard" }, "s": { i: "☀️", w: "Soleil" }, "t": { i: "🐯", w: "Tigre" }, "u": { i: "🏭", w: "Usine" }, "v": { i: "🐄", w: "Vache" }, "w": { i: "🚃", w: "Wagon" }, "x": { i: "❌", w: "Croix" }, "y": { i: "🪀", w: "Yo-yo" }, "z": { i: "🦓", w: "Zèbre" } },
+            el: { "α": { i: "⭐", w: "Αστέρι" }, "β": { i: "🐸", w: "Βάτραχος" }, "γ": { i: "🐱", w: "Γάτα" }, "δ": { i: "🌳", w: "Δέντρο" }, "ε": { i: "🐘", w: "Ελέφαντας" }, "ζ": { i: "🦓", w: "Ζέβρα" }, "η": { i: "☀️", w: "Ήλιος" }, "θ": { i: "💎", w: "Θησαυρός" }, "ι": { i: "🌡️", w: "Θερμόμετρο" }, "κ": { i: "🦀", w: "Κάβουρας" }, "λ": { i: "🦁", w: "Λιοντάρι" }, "μ": { i: "🐒", w: "Μαϊμού" }, "ν": { i: "🦇", w: "Νυχτερίδα" }, "ξ": { i: "⚔️", w: "Ξίφος" }, "ο": { i: "☂️", w: "Ομπρέλα" }, "π": { i: "🦋", w: "Πεταλούδα" }, "ρ": { i: "⌚", w: "Ρολόι" }, "σ": { i: "🐶", w: "Σκύλος" }, "τ": { i: "🐯", w: "Τίγρης" }, "υ": { i: "💻", w: "Υπολογιστής" }, "φ": { i: "🐍", w: "Φίδι" }, "χ": { i: "🐢", w: "Χελώνα" }, "ψ": { i: "🐟", w: "Ψάρι" }, "ω": { i: "🌊", w: "Ωκεανός" } }
+        };
+
+        const uiTranslations = {
+            en: { title: "Find the Image!", success: "Great Job! 🎉", replay: "Play Again" },
+            fr: { title: "Trouve l'image !", success: "Bravo ! 🎉", replay: "Rejouer" },
+            el: { title: "Βρες την Εικόνα!", success: "Μπράβο! 🎉", replay: "Παίξε Ξανά" }
+        };
+
+        const palette = ["#FF595E", "#8AC926", "#FFCA3A", "#FF924C", "#9D4EDD"];
+        let currentLang = localStorage.getItem('appLang') || 'en';
+        let gameData = { left: [], right: [] }, activeLine = null, completedLines = []; 
+        let isDoubleTap = false;
+
+        function updateUIText() {
+            document.body.lang = currentLang;
+            document.getElementById('lang-select').value = currentLang;
+            document.getElementById('game-title').textContent = uiTranslations[currentLang].title;
+            document.getElementById('success-text').textContent = uiTranslations[currentLang].success;
+            document.getElementById('replay-btn').textContent = uiTranslations[currentLang].replay;
+        }
+
+        function shuffle(array) { return array.sort(() => Math.random() - 0.5); }
+
+        function generateRandomData() {
+            const letterMap = dictionaries[currentLang];
+            const allLetters = shuffle(Object.keys(letterMap)).slice(0, 5);
+            gameData.left = allLetters.map((l, i) => ({ id: `L_${i}`, text: l.toLowerCase(), matchId: `p_${i}` }));
+            gameData.right = shuffle(allLetters.map((l, i) => ({ id: `R_${i}`, icon: letterMap[l].i, word: letterMap[l].w, matchId: `p_${i}` })));
+            gameData.left.forEach((l, i) => { l.color = palette[i]; gameData.right[i].color = palette[i]; });
+        }
+
+        document.getElementById('lang-select').addEventListener('change', (e) => {
+            currentLang = e.target.value; localStorage.setItem('appLang', currentLang);
+            updateUIText(); initGame();
+        });
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            if (type === 'success') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.02); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            } else if (type === 'fail') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        const canvas = document.getElementById('drawing-layer'), ctx = canvas.getContext('2d'), wrapper = document.getElementById('game-wrapper');
+
+        function initGame() {
+            document.getElementById('success-message').style.display = 'none';
+            document.getElementById('left-col').innerHTML = ''; document.getElementById('right-col').innerHTML = '';
+            completedLines = []; activeLine = null;
+            updateUIText(); generateRandomData();
+            gameData.left.forEach(d => document.getElementById('left-col').appendChild(createItemElement(d, 'left')));
+            gameData.right.forEach(d => document.getElementById('right-col').appendChild(createItemElement(d, 'right')));
+            resizeCanvas(); setupInteractions();
+        }
+
+        function createItemElement(data, side) {
+            const el = document.createElement('div'); el.className = 'item'; el.id = data.id; el.style.borderColor = `${data.color}40`;
+            const c = document.createElement('div'); c.className = 'item-content';
+            if (side === 'left') { const t = document.createElement('div'); t.className = 'item-text'; t.textContent = data.text; t.style.color = data.color; c.appendChild(t); } 
+            else { const i = document.createElement('div'); i.className = 'item-icon'; i.textContent = data.icon; c.appendChild(i); el.dataset.word = data.word; }
+            const n = document.createElement('div'); n.className = 'node'; n.dataset.matchId = data.matchId; n.dataset.color = data.color; n.dataset.side = side; n.style.backgroundColor = data.color;
+            el.appendChild(c); el.appendChild(n); return el;
+        }
+
+        function resizeCanvas() { canvas.width = wrapper.offsetWidth; canvas.height = wrapper.offsetHeight; drawAll(); }
+        function getCenter(el) { const rect = el.getBoundingClientRect(), wr = wrapper.getBoundingClientRect(); return { x: rect.left - wr.left + rect.width / 2, y: rect.top - wr.top + rect.height / 2 }; }
+        function drawAll() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            completedLines.forEach(l => { const s = getCenter(l.startNode), e = getCenter(l.endNode); drawLine(s.x, s.y, e.x, e.y, l.color, 'left'); });
+            if (activeLine) { const s = getCenter(activeLine.startNode); drawLine(s.x, s.y, activeLine.currentX, activeLine.currentY, activeLine.color, activeLine.side); }
+        }
+        function drawLine(x1, y1, x2, y2, color, startSide) {
+            ctx.beginPath(); ctx.moveTo(x1, y1); const d = Math.abs(x2 - x1);
+            ctx.bezierCurveTo(startSide === 'left' ? x1 + d*0.4 : x1 - d*0.4, y1, startSide === 'left' ? x2 - d*0.4 : x2 + d*0.4, y2, x2, y2);
+            ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.strokeStyle = color; ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.stroke(); ctx.shadowBlur = 0;
+        }
+
+        function showWord(item) {
+            let existing = item.querySelector('.word-toast');
+            if (existing) { clearTimeout(existing.fadeTimer); existing.remove(); }
+            const toast = document.createElement('div'); toast.className = 'word-toast show'; toast.textContent = item.dataset.word;
+            toast.style.backgroundColor = item.querySelector('.node').dataset.color;
+            item.appendChild(toast);
+            toast.fadeTimer = setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 2000);
+        }
+
+        function setupInteractions() {
+            let lastTapTime = 0, lastTappedItem = null;
+            const startDrag = (e) => {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const isT = e.type.includes('touch'), target = isT ? document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY) : e.target;
+                const item = target ? target.closest('.item') : null;
+                
+                if (item) {
+                    const ct = new Date().getTime();
+                    // Double Tap Logic
+                    if (ct - lastTapTime < 400 && lastTappedItem === item && item.parentElement.classList.contains('right-col')) {
+                        isDoubleTap = true; 
+                        activeLine = null; // Clear the line immediately so endDrag has nothing to do
+                        showWord(item);
+                        lastTapTime = 0;
+                        return; 
+                    }
+                    isDoubleTap = false;
+                    lastTapTime = ct;
+                    lastTappedItem = item;
+
+                    const node = item.querySelector('.node'); 
+                    if (completedLines.find(l => l.startNode === node || l.endNode === node)) return;
+
+                    const r = wrapper.getBoundingClientRect(); 
+                    activeLine = { 
+                        startNode: node, 
+                        side: node.dataset.side, 
+                        currentX: (isT ? e.touches[0].clientX : e.clientX) - r.left, 
+                        currentY: (isT ? e.touches[0].clientY : e.clientY) - r.top, 
+                        color: node.dataset.color 
+                    };
+                    drawAll();
+                }
+            };
+
+            const endDrag = (e) => {
+                // If there is no active line (because it was cleared by double tap), exit immediately
+                if (!activeLine) {
+                    isDoubleTap = false;
+                    return;
+                }
+                
+                const isT = e.type.includes('touch');
+                const target = document.elementFromPoint(isT ? e.changedTouches[0].clientX : e.clientX, isT ? e.changedTouches[0].clientY : e.clientY);
+                const item = target ? target.closest('.item') : null;
+                let isSuccess = false;
+
+                if (item) {
+                    const tn = item.querySelector('.node');
+                    if (tn.dataset.side !== activeLine.side && !completedLines.find(l => l.startNode === tn || l.endNode === tn) && activeLine.startNode.dataset.matchId === tn.dataset.matchId) {
+                        isSuccess = true;
+                        playSound('success');
+                        completedLines.push({ startNode: activeLine.side === 'left' ? activeLine.startNode : tn, endNode: activeLine.side === 'right' ? activeLine.startNode : tn, color: activeLine.color });
+                        activeLine.startNode.closest('.item').classList.add('solved');
+                        item.classList.add('solved');
+                        if (completedLines.length === 5) setTimeout(() => document.getElementById('success-message').style.display = 'flex', 500);
+                    }
+                }
+                
+                if (!isSuccess) {
+                    const sC = getCenter(activeLine.startNode);
+                    if (Math.hypot(activeLine.currentX - sC.x, activeLine.currentY - sC.y) > 40) playSound('fail');
+                }
+                
+                activeLine = null;
+                isDoubleTap = false;
+                drawAll();
+            };
+            const drag = (e) => { if (!activeLine) return; e.preventDefault(); const isT = e.type.includes('touch'), r = wrapper.getBoundingClientRect(); activeLine.currentX = (isT ? e.touches[0].clientX : e.clientX) - r.left; activeLine.currentY = (isT ? e.touches[0].clientY : e.clientY) - r.top; drawAll(); };
+            
+            document.removeEventListener('mousedown', startDrag); document.removeEventListener('mousemove', drag); document.removeEventListener('mouseup', endDrag); document.removeEventListener('touchstart', startDrag); document.removeEventListener('touchmove', drag); document.removeEventListener('touchend', endDrag);
+            document.addEventListener('mousedown', startDrag); document.addEventListener('mousemove', drag); document.addEventListener('mouseup', endDrag); document.addEventListener('touchstart', startDrag, {passive: false}); document.addEventListener('touchmove', drag, {passive: false}); document.addEventListener('touchend', endDrag);
+        }
+        initGame();
+    </script>
+</body>
+</html>

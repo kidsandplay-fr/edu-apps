@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Letters Games</title>
+    <!-- Playful Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none; 
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Baloo 2', cursive;
+            background: linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* FONT FIX FOR GREEK */
+        :lang(el) body, 
+        :lang(el) h1, 
+        :lang(el) .title,
+        :lang(el) .subtitle,
+        :lang(el) select {
+            font-family: 'Arial', sans-serif !important;
+        }
+
+        /* Language Selector Top Right */
+        #controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20;
+        }
+
+        #lang-select {
+            padding: 8px 16px;
+            font-family: inherit;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 20px;
+            border: 2px solid #FFF;
+            background: #1982C4;
+            color: white;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        #lang-select:hover { transform: scale(1.05); }
+
+        h1 {
+            color: #FF595E;
+            font-size: 4.5rem;
+            text-shadow: 3px 3px 0px #FFF, 6px 6px 0px rgba(0,0,0,0.1);
+            margin-bottom: 50px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .menu-container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+            padding: 0 20px;
+            flex-wrap: wrap;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 35px;
+            padding: 30px 20px;
+            text-align: center;
+            text-decoration: none;
+            width: 30%;
+            min-width: 200px;
+            max-width: 250px;
+            box-shadow: var(--shadow);
+            border: 6px solid #FFF;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Unique border colors for each game card */
+        .card-letters { border-color: #FFCA3A; }
+        .card-syllables { border-color: #8AC926; }
+        .card-image { border-color: #00BBF9; }
+
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .game-card:active {
+            transform: translateY(2px) scale(0.98);
+        }
+
+        .icon {
+            font-size: 5rem;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+            transition: transform 0.3s;
+        }
+
+        .game-card:hover .icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #444;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #888;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .menu-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+            .game-card {
+                width: 90%;
+                max-width: 350px;
+                padding: 20px;
+                flex-direction: row;
+                text-align: left;
+                justify-content: flex-start;
+                gap: 20px;
+            }
+            .icon {
+                font-size: 3.5rem;
+                margin-bottom: 0;
+            }
+            h1 {
+                font-size: 3rem;
+                margin-bottom: 30px;
+                margin-top: 50px;
+            }
+            .title {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body lang="en">
+
+    <div id="controls">
+        <select id="lang-select">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="el">Ελληνικά</option>
+        </select>
+    </div>
+
+    <h1 id="main-title">Letters Games</h1>
+
+    <div class="menu-container">
+        
+        <!-- Link to Lower/Capital Game -->
+        <a href="letters.html" class="game-card card-letters">
+            <div class="icon">🔠</div>
+            <div>
+                <div class="title" id="title-letters">Lower/<br>Capital</div>
+                <div class="subtitle" id="sub-letters">a ➔ A</div>
+            </div>
+        </a>
+
+        <!-- Link to Syllables Game -->
+        <a href="syllabes.html" class="game-card card-syllables">
+            <div class="icon">🧩</div>
+            <div>
+                <div class="title" id="title-syllables">Syllable<br>Match</div>
+                <div class="subtitle" id="sub-syllables">ba, ca, do...</div>
+            </div>
+        </a>
+
+        <!-- Link to Letter-to-Image Game -->
+        <a href="letter-to-image.html" class="game-card card-image">
+            <div class="icon">🖼️</div>
+            <div>
+                <div class="title" id="title-image">Find<br>Image</div>
+                <div class="subtitle" id="sub-image">a ➔ 🍎</div>
+            </div>
+        </a>
+
+    </div>
+
+    <script>
+        const indexTranslations = {
+            en: {
+                mainTitle: "Letters Games",
+                titleLetters: "Lower/<br>Capital", subLetters: "a ➔ A",
+                titleSyllables: "Syllable<br>Match", subSyllables: "ba, ca, do...",
+                titleImage: "Find the<br>image", subImage: "a ➔ 🍎"
+            },
+            fr: {
+                mainTitle: "Jeux de Lettres",
+                titleLetters: "Minuscule/<br>Majuscule", subLetters: "a ➔ A",
+                titleSyllables: "Jeu des<br>Syllabes", subSyllables: "ba, ca, do...",
+                titleImage: "Trouve<br>l'Image", subImage: "a ➔ 🍎"
+            },
+            el: {
+                mainTitle: "Παιχνίδια",
+                titleLetters: "Μικρά/<br>Κεφαλαία", subLetters: "α ➔ Α",
+                titleSyllables: "Συλλαβές", subSyllables: "βα, γα, δα...",
+                titleImage: "Βρες την<br>Εικόνα", subImage: "α ➔ ⭐"
+            }
+        };
+
+        // Get saved language or default to English
+        let currentLang = localStorage.getItem('appLang') || 'en';
+
+        function updateUI() {
+            document.body.lang = currentLang;
+            document.getElementById('lang-select').value = currentLang;
+            
+            document.getElementById('main-title').innerHTML = indexTranslations[currentLang].mainTitle;
+            document.getElementById('title-letters').innerHTML = indexTranslations[currentLang].titleLetters;
+            document.getElementById('sub-letters').innerHTML = indexTranslations[currentLang].subLetters;
+            document.getElementById('title-syllables').innerHTML = indexTranslations[currentLang].titleSyllables;
+            document.getElementById('sub-syllables').innerHTML = indexTranslations[currentLang].subSyllables;
+            document.getElementById('title-image').innerHTML = indexTranslations[currentLang].titleImage;
+            document.getElementById('sub-image').innerHTML = indexTranslations[currentLang].subImage;
+        }
+
+        document.getElementById('lang-select').addEventListener('change', (e) => {
+            currentLang = e.target.value;
+            localStorage.setItem('appLang', currentLang); // Save choice
+            updateUI();
+        });
+
+        // Initialize UI on load
+        updateUI();
+    </script>
+</body>
+</html>
