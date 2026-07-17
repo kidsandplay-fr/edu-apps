@@ -213,6 +213,14 @@
             </div>
         </a>
 
+        <!-- Link to Sounds Game -->
+        <a href="sounds.html" class="game-card" style="border-color: #9D4EDD;">
+            <div class="icon">🔊</div>
+            <div>
+                <div class="title" id="title-sounds">Listen &<br>Match</div>
+                <div class="subtitle" id="sub-sounds">🔊 ➔ a</div>
+            </div>
+        </a>
     </div>
 
     <script>
@@ -221,19 +229,22 @@
                 mainTitle: "Letters Games",
                 titleLetters: "Lower/<br>Capital", subLetters: "a ➔ A",
                 titleSyllables: "Syllable<br>Match", subSyllables: "ba, ca, do...",
-                titleImage: "Find the<br>image", subImage: "a ➔ 🍎"
+                titleImage: "Find the<br>image", subImage: "a ➔ 🍎",
+                titleSounds: "Listen &<br>Match", subSounds: "🔊 ➔ a"
             },
             fr: {
                 mainTitle: "Jeux de Lettres",
                 titleLetters: "Minuscule/<br>Majuscule", subLetters: "a ➔ A",
                 titleSyllables: "Jeu des<br>Syllabes", subSyllables: "ba, ca, do...",
-                titleImage: "Trouve<br>l'Image", subImage: "a ➔ 🍎"
+                titleImage: "Trouve<br>l'Image", subImage: "a ➔ 🍎",
+                titleSounds: "Écoute &<br>Associe", subSounds: "🔊 ➔ a"
             },
             el: {
                 mainTitle: "Παιχνίδια",
                 titleLetters: "Μικρά/<br>Κεφαλαία", subLetters: "α ➔ Α",
                 titleSyllables: "Συλλαβές", subSyllables: "βα, γα, δα...",
-                titleImage: "Βρες την<br>Εικόνα", subImage: "α ➔ ⭐"
+                titleImage: "Βρες την<br>Εικόνα", subImage: "α ➔ ⭐",
+                titleSounds: "Άκου &<br>Ταίριαξε", subSounds: "🔊 ➔ α"
             }
         };
 
@@ -251,6 +262,8 @@
             document.getElementById('sub-syllables').innerHTML = indexTranslations[currentLang].subSyllables;
             document.getElementById('title-image').innerHTML = indexTranslations[currentLang].titleImage;
             document.getElementById('sub-image').innerHTML = indexTranslations[currentLang].subImage;
+            document.getElementById('title-sounds').innerHTML = indexTranslations[currentLang].titleImage;
+            document.getElementById('sub-sounds').innerHTML = indexTranslations[currentLang].subImage;
         }
 
         document.getElementById('lang-select').addEventListener('change', (e) => {
