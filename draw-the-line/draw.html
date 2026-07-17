@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Let's Copy the Drawing!</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;700;800&display=swap');
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0f4f8; /* Soft tablet-like background */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            color: #333;
+        }
+
+        .app-container {
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* --- Header Section --- */
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            color: #ff6b6b;
+            font-size: 2.5rem;
+            margin: 0 0 5px 0;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #555;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        /* --- Top Controls Row --- */
+        .top-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+        }
+
+        select, button.pill-btn {
+            font-family: 'Nunito', sans-serif;
+            font-size: 15px;
+            font-weight: 800;
+            padding: 10px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px; /* Pill shape */
+            background-color: white;
+            color: #2d3748;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        select {
+            appearance: none;
+            padding-right: 35px;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%232d3748%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px top 50%;
+            background-size: 10px auto;
+        }
+
+        select:active, button.pill-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.05);
+        }
+
+        /* --- Workspace --- */
+        .workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            align-items: center;
+        }
+
+        @media (min-width: 768px) {
+            .workspace {
+                flex-direction: row;
+                align-items: flex-start;
+                justify-content: center;
+            }
+        }
+
+        .canvas-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .canvas-label {
+            font-size: 14px;
+            font-weight: 800;
+            color: #4a5568;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .canvas-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        /* User Area Layout */
+        .user-area {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        /* --- Vertical Tools --- */
+        .vertical-tools {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .tool-square {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 70px;
+            height: 70px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            font-size: 12px;
+            color: #4a5568;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.15s ease;
+        }
+
+        .tool-square .icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .tool-square:hover {
+            background: #edf2f7;
+        }
+
+        .tool-square.active {
+            background: #e6f6ff;
+            border-color: #3b82f6;
+            color: #2563eb;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* --- Bottom Action --- */
+        .bottom-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button.check-btn {
+            font-family: 'Nunito', sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            padding: 15px 40px;
+            background-color: #ffca28; /* Yellowish button */
+            color: #7a5a00;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #d9a01c;
+            transition: all 0.1s;
+        }
+
+        button.check-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #d9a01c;
+        }
+
+        /* Overlay Confetti & Modal */
+        #confetti {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 100;
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(3px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 101; visibility: hidden; opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.show { visibility: visible; opacity: 1; }
+        .modal-overlay.show .modal { transform: scale(1); }
+
+        .modal {
+            background: white; padding: 40px; border-radius: 30px;
+            text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal h2 { font-family: 'Fredoka One', cursive; color: #1dd1a1; font-size: 2.5rem; margin: 0 0 10px 0; }
+        .modal p { font-size: 1.2rem; color: #555; margin-bottom: 25px; }
+        .modal button {
+            font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 800;
+            padding: 12px 30px; background-color: #3b82f6; color: white;
+            border: none; border-radius: 20px; cursor: pointer; box-shadow: 0 5px 0 #2563eb;
+        }
+        .modal button:active { transform: translateY(5px); box-shadow: 0 0 0 #2563eb; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div class="header">
+            <h1>Let's Copy the Drawing!</h1>
+            <p class="subtitle">Can you make an identical copy?</p>
+        </div>
+        
+        <div class="top-controls">
+            <select id="levelSelect">
+                <option value="4">▦ Grid Size: 4x4</option>
+                <option value="6">▦ Grid Size: 6x6</option>
+                <option value="8">▦ Grid Size: 8x8</option>
+            </select>
+            
+            <button id="diffImageBtn" class="pill-btn">🖼️ New Drawing</button>
+        </div>
+
+        <div class="workspace">
+            <!-- Model Drawing Canvas -->
+            <div class="canvas-section">
+                <div class="canvas-label">Model Drawing</div>
+                <div class="canvas-wrapper">
+                    <canvas id="refCanvas" width="340" height="340"></canvas>
+                </div>
+            </div>
+            
+            <!-- User Interactive Canvas + Tools -->
+            <div class="canvas-section">
+                <div class="canvas-label">Your Drawing Space</div>
+                
+                <div class="user-area">
+                    <div class="canvas-wrapper">
+                        <canvas id="userCanvas" width="340" height="340"></canvas>
+                    </div>
+                    
+                    <div class="vertical-tools">
+                        <button id="drawBtn" class="tool-square active">
+                            <span class="icon">✏️</span>
+                            <span>Pencil</span>
+                        </button>
+                        <button id="eraseBtn" class="tool-square">
+                            <span class="icon">🧽</span>
+                            <span>Eraser</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-controls">
+            <button id="validateBtn" class="check-btn">✔️ Check My Drawing!</button>
+        </div>
+
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal-overlay" id="successModal">
+        <div class="modal">
+            <h2>Great Job! 🎉</h2>
+            <p>You copied the design perfectly!</p>
+            <button id="nextBtn">Next Image ➔</button>
+        </div>
+    </div>
+
+    <canvas id="confetti"></canvas>
+
+    <script>
+        // --- Game Data ---
+        const designs = {
+            '4': [
+                // 1. Triangle
+                [ {x1:1, y1:1, x2:3, y2:1}, {x1:3, y1:1, x2:2, y2:3}, {x1:2, y1:3, x2:1, y2:1} ],
+                // 2. Square with diagonal
+                [ {x1:1, y1:1, x2:1, y2:3}, {x1:1, y1:3, x2:3, y2:3}, {x1:3, y1:3, x2:3, y2:1}, {x1:3, y1:1, x2:1, y2:1}, {x1:1, y1:1, x2:3, y2:3} ],
+                // 3. Cross
+                [ {x1:2, y1:0, x2:2, y2:4}, {x1:0, y1:2, x2:4, y2:2} ],
+                // 4. Diamond
+                [ {x1:2, y1:0, x2:4, y2:2}, {x1:4, y1:2, x2:2, y2:4}, {x1:2, y1:4, x2:0, y2:2}, {x1:0, y1:2, x2:2, y2:0} ],
+                // 5. Letter X
+                [ {x1:0, y1:0, x2:4, y2:4}, {x1:0, y1:4, x2:4, y2:0} ],
+                // 6. Arrow Pointing Right
+                [ {x1:1, y1:2, x2:4, y2:2}, {x1:4, y1:2, x2:2, y2:0}, {x1:4, y1:2, x2:2, y2:4} ],
+                // 7. Hourglass
+                [ {x1:0, y1:0, x2:4, y2:0}, {x1:0, y1:0, x2:4, y2:4}, {x1:4, y1:0, x2:0, y2:4}, {x1:0, y1:4, x2:4, y2:4} ],
+                // 8. Flag
+                [ {x1:1, y1:0, x2:1, y2:4}, {x1:1, y1:0, x2:4, y2:1}, {x1:4, y1:1, x2:1, y2:2} ],
+                // 9. Letter M
+                [ {x1:0, y1:4, x2:0, y2:0}, {x1:0, y1:0, x2:2, y2:2}, {x1:2, y1:2, x2:4, y2:0}, {x1:4, y1:0, x2:4, y2:4} ],
+                // 10. Zig-Zag
+                [ {x1:0, y1:1, x2:2, y2:1}, {x1:2, y1:1, x2:1, y2:3}, {x1:1, y1:3, x2:3, y2:3} ]
+            ],
+            '6': [
+                // 1. House
+                [ {x1:1, y1:4, x2:5, y2:4}, {x1:1, y1:2, x2:5, y2:2}, {x1:1, y1:4, x2:1, y2:2}, {x1:5, y1:4, x2:5, y2:2}, {x1:1, y1:2, x2:3, y2:0}, {x1:5, y1:2, x2:3, y2:0} ],
+                // 2. Boat
+                [ {x1:1, y1:2, x2:5, y2:2}, {x1:2, y1:4, x2:4, y2:4}, {x1:1, y1:2, x2:2, y2:4}, {x1:5, y1:2, x2:4, y2:4}, {x1:3, y1:2, x2:3, y2:0}, {x1:3, y1:0, x2:5, y2:2} ],
+                // 3. Crown
+                [ {x1:1, y1:4, x2:5, y2:4}, {x1:1, y1:4, x2:1, y2:2}, {x1:1, y1:2, x2:2, y2:3}, {x1:2, y1:3, x2:3, y2:1}, {x1:3, y1:1, x2:4, y2:3}, {x1:4, y1:3, x2:5, y2:2}, {x1:5, y1:2, x2:5, y2:4} ],
+                // 4. Tree
+                [ {x1:3, y1:1, x2:2, y2:3}, {x1:2, y1:3, x2:4, y2:3}, {x1:4, y1:3, x2:3, y2:1}, {x1:2, y1:3, x2:1, y2:5}, {x1:1, y1:5, x2:5, y2:5}, {x1:5, y1:5, x2:4, y2:3}, {x1:3, y1:5, x2:3, y2:6} ],
+                // 5. Lightning Bolt
+                [ {x1:3, y1:1, x2:1, y2:4}, {x1:1, y1:4, x2:3, y2:4}, {x1:3, y1:4, x2:2, y2:6}, {x1:2, y1:6, x2:5, y2:3}, {x1:5, y1:3, x2:3, y2:3}, {x1:3, y1:3, x2:4, y2:1}, {x1:4, y1:1, x2:3, y2:1} ],
+                // 6. Fish
+                [ {x1:2, y1:3, x2:4, y2:2}, {x1:4, y1:2, x2:5, y2:3}, {x1:5, y1:3, x2:4, y2:4}, {x1:4, y1:4, x2:2, y2:3}, {x1:2, y1:3, x2:1, y2:2}, {x1:1, y1:2, x2:1, y2:4}, {x1:1, y1:4, x2:2, y2:3} ],
+                // 7. Coffee Mug
+                [ {x1:2, y1:2, x2:2, y2:5}, {x1:2, y1:5, x2:4, y2:5}, {x1:4, y1:5, x2:4, y2:2}, {x1:2, y1:2, x2:4, y2:2}, {x1:4, y1:3, x2:5, y2:3}, {x1:5, y1:3, x2:5, y2:4}, {x1:5, y1:4, x2:4, y2:4} ],
+                // 8. Envelope
+                [ {x1:1, y1:2, x2:5, y2:2}, {x1:5, y1:2, x2:5, y2:5}, {x1:5, y1:5, x2:1, y2:5}, {x1:1, y1:5, x2:1, y2:2}, {x1:1, y1:2, x2:3, y2:4}, {x1:5, y1:2, x2:3, y2:4} ],
+                // 9. Geometric Heart
+                [ {x1:3, y1:5, x2:1, y2:3}, {x1:1, y1:3, x2:1, y2:2}, {x1:1, y1:2, x2:2, y2:1}, {x1:2, y1:1, x2:3, y2:2}, {x1:3, y1:2, x2:4, y2:1}, {x1:4, y1:1, x2:5, y2:2}, {x1:5, y1:2, x2:5, y2:3}, {x1:5, y1:3, x2:3, y2:5} ],
+                // 10. Rocket Ship
+                [ {x1:3, y1:1, x2:2, y2:3}, {x1:3, y1:1, x2:4, y2:3}, {x1:2, y1:3, x2:2, y2:5}, {x1:4, y1:3, x2:4, y2:5}, {x1:2, y1:5, x2:4, y2:5}, {x1:2, y1:4, x2:1, y2:5}, {x1:4, y1:4, x2:5, y2:5}, {x1:2, y1:3, x2:4, y2:3} ]
+            ],
+            '8': [
+                 // 10. Castle
+                [ {x1:1, y1:7, x2:7, y2:7}, {x1:1, y1:7, x2:1, y2:3}, {x1:1, y1:3, x2:2, y2:3}, {x1:2, y1:3, x2:2, y2:4}, {x1:2, y1:4, x2:3, y2:4}, {x1:3, y1:4, x2:3, y2:3}, {x1:3, y1:3, x2:5, y2:3}, {x1:5, y1:3, x2:5, y2:4}, {x1:5, y1:4, x2:6, y2:4}, {x1:6, y1:4, x2:6, y2:3}, {x1:6, y1:3, x2:7, y2:3}, {x1:7, y1:3, x2:7, y2:7}, {x1:3, y1:7, x2:3, y2:5}, {x1:3, y1:5, x2:5, y2:5}, {x1:5, y1:5, x2:5, y2:7} ]
+                // 2. Diamond Box
+                [ {x1:4, y1:1, x2:7, y2:4}, {x1:7, y1:4, x2:4, y2:7}, {x1:4, y1:7, x2:1, y2:4}, {x1:1, y1:4, x2:4, y2:1}, {x1:4, y1:1, x2:4, y2:7}, {x1:1, y1:4, x2:7, y2:4} ],
+                // 3. Umbrella
+                [ {x1:4, y1:2, x2:1, y2:5}, {x1:4, y1:2, x2:7, y2:5}, {x1:1, y1:5, x2:7, y2:5}, {x1:4, y1:5, x2:4, y2:7}, {x1:4, y1:7, x2:3, y2:7} ],
+                // 4. Car
+                [ {x1:2, y1:5, x2:6, y2:5}, {x1:6, y1:5, x2:7, y2:6}, {x1:7, y1:6, x2:7, y2:7}, {x1:7, y1:7, x2:1, y2:7}, {x1:1, y1:7, x2:1, y2:6}, {x1:1, y1:6, x2:2, y2:5}, {x1:3, y1:5, x2:3, y2:3}, {x1:5, y1:5, x2:5, y2:3}, {x1:3, y1:3, x2:5, y2:3}, {x1:2, y1:7, x2:2, y2:8}, {x1:3, y1:7, x2:3, y2:8}, {x1:5, y1:7, x2:5, y2:8}, {x1:6, y1:7, x2:6, y2:8} ],
+                // 5. Windmill
+                [ {x1:4, y1:4, x2:4, y2:7}, {x1:3, y1:7, x2:5, y2:7}, {x1:4, y1:4, x2:6, y2:2}, {x1:6, y1:2, x2:5, y2:2}, {x1:5, y1:2, x2:4, y2:4}, {x1:4, y1:4, x2:6, y2:6}, {x1:6, y1:6, x2:6, y2:5}, {x1:6, y1:5, x2:4, y2:4}, {x1:4, y1:4, x2:2, y2:6}, {x1:2, y1:6, x2:3, y2:6}, {x1:3, y1:6, x2:4, y2:4}, {x1:4, y1:4, x2:2, y2:2}, {x1:2, y1:2, x2:2, y2:3}, {x1:2, y1:3, x2:4, y2:4} ],
+                // 6. Cat Head
+                [ {x1:2, y1:4, x2:2, y2:2}, {x1:2, y1:2, x2:3, y2:3}, {x1:3, y1:3, x2:5, y2:3}, {x1:5, y1:3, x2:6, y2:2}, {x1:6, y1:2, x2:6, y2:4}, {x1:6, y1:4, x2:4, y2:6}, {x1:4, y1:6, x2:2, y2:4} ],
+                // 7. Flower
+                [ {x1:4, y1:4, x2:4, y2:7}, {x1:4, y1:4, x2:2, y2:2}, {x1:2, y1:2, x2:4, y2:2}, {x1:4, y1:2, x2:4, y2:4}, {x1:4, y1:4, x2:6, y2:2}, {x1:6, y1:2, x2:4, y2:2}, {x1:4, y1:4, x2:2, y2:4}, {x1:2, y1:4, x2:2, y2:2}, {x1:4, y1:4, x2:6, y2:4}, {x1:6, y1:4, x2:6, y2:2} ],
+                // 8. Spider Web
+                [ {x1:4, y1:1, x2:6, y2:3}, {x1:6, y1:3, x2:6, y2:5}, {x1:6, y1:5, x2:4, y2:7}, {x1:4, y1:7, x2:2, y2:5}, {x1:2, y1:5, x2:2, y2:3}, {x1:2, y1:3, x2:4, y2:1}, {x1:1, y1:4, x2:7, y2:4}, {x1:4, y1:1, x2:4, y2:7}, {x1:2, y1:2, x2:6, y2:6}, {x1:2, y1:6, x2:6, y2:2} ],
+                // 9. Bowtie
+                [ {x1:1, y1:2, x2:4, y2:4}, {x1:4, y1:4, x2:1, y2:6}, {x1:1, y1:6, x2:1, y2:2}, {x1:7, y1:2, x2:4, y2:4}, {x1:4, y1:4, x2:7, y2:6}, {x1:7, y1:6, x2:7, y2:2} ],
+                // 1. Star
+                [ {x1:4, y1:1, x2:5, y2:3}, {x1:5, y1:3, x2:7, y2:3}, {x1:7, y1:3, x2:5, y2:5}, {x1:5, y1:5, x2:6, y2:7}, {x1:6, y1:7, x2:4, y2:5}, {x1:4, y1:5, x2:2, y2:7}, {x1:2, y1:7, x2:3, y2:5}, {x1:3, y1:5, x2:1, y2:3}, {x1:1, y1:3, x2:3, y2:3}, {x1:3, y1:3, x2:4, y2:1} ],
+           ]
+        };
+
+        // --- State ---
+        let currentLevel = '4'; // Initialized to 4x4
+        let currentImageIdx = 0;
+        let isEraseMode = false;
+        let userLines = [];
+        let drawingState = { active: false, startNode: null, currentPos: null };
+        let showErrors = false;
+
+        // --- Elements ---
+        const refCanvas = document.getElementById('refCanvas');
+        const refCtx = refCanvas.getContext('2d');
+        const userCanvas = document.getElementById('userCanvas');
+        const userCtx = userCanvas.getContext('2d');
+        const levelSelect = document.getElementById('levelSelect');
+        const drawBtn = document.getElementById('drawBtn');
+        const eraseBtn = document.getElementById('eraseBtn');
+        const diffImageBtn = document.getElementById('diffImageBtn');
+        const validateBtn = document.getElementById('validateBtn');
+        const successModal = document.getElementById('successModal');
+        const nextBtn = document.getElementById('nextBtn');
+        const confettiCanvas = document.getElementById('confetti');
+
+        // --- Drawing Metrics ---
+        const PADDING = 25;
+        const CANVAS_SIZE = 340;
+
+        function getGridSize() { return parseInt(currentLevel); }
+        function getCellSize() { return (CANVAS_SIZE - PADDING * 2) / getGridSize(); }
+        
+        function getNodeCoords(x, y) {
+            const cellSize = getCellSize();
+            return {
+                px: PADDING + x * cellSize,
+                py: PADDING + y * cellSize
+            };
+        }
+
+        function getGCD(a, b) {
+            a = Math.abs(a); b = Math.abs(b);
+            while (b) { let t = b; b = a % b; a = t; }
+            return a;
+        }
+
+        function normalizeLines(lines) {
+            const primitives = new Set();
+            for (let line of lines) {
+                let dx = line.x2 - line.x1;
+                let dy = line.y2 - line.y1;
+                let gcd = getGCD(dx, dy);
+                if (gcd === 0) continue;
+                let sx = dx / gcd;
+                let sy = dy / gcd;
+                
+                for (let i = 0; i < gcd; i++) {
+                    let px1 = line.x1 + i * sx;
+                    let py1 = line.y1 + i * sy;
+                    let px2 = px1 + sx;
+                    let py2 = py1 + sy;
+                    
+                    let str = "";
+                    if (px1 < px2 || (px1 === px2 && py1 < py2)) {
+                        str = `${px1},${py1},${px2},${py2}`;
+                    } else {
+                        str = `${px2},${py2},${px1},${py1}`;
+                    }
+                    primitives.add(str);
+                }
+            }
+            return primitives;
+        }
+
+        // --- Rendering ---
+        function drawDots(ctx) {
+            const size = getGridSize();
+            ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+            
+            // Only draw blue dots to match the reference style
+            ctx.fillStyle = '#2c3e50'; 
+            for (let x = 0; x <= size; x++) {
+                for (let y = 0; y <= size; y++) {
+                    let coords = getNodeCoords(x, y);
+                    ctx.beginPath();
+                    ctx.arc(coords.px, coords.py, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function drawLines(ctx, lines, color = '#333333', lineWidth = 5) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.lineCap = 'round';
+            for (let line of lines) {
+                let c1 = getNodeCoords(line.x1, line.y1);
+                let c2 = getNodeCoords(line.x2, line.y2);
+                ctx.beginPath();
+                ctx.moveTo(c1.px, c1.py);
+                ctx.lineTo(c2.px, c2.py);
+                ctx.stroke();
+            }
+        }
+
+        function renderAll() {
+            // Render Reference
+            drawDots(refCtx);
+            const targetLines = designs[currentLevel][currentImageIdx];
+            drawLines(refCtx, targetLines, '#333333', 5);
+
+            // Render User
+            drawDots(userCtx);
+            
+            if (showErrors) {
+                const targetPrimitives = normalizeLines(targetLines);
+                const userPrimitivesArray = Array.from(normalizeLines(userLines));
+                
+                const correctLines = [];
+                const wrongLines = [];
+                
+                for (let prim of userPrimitivesArray) {
+                    let [x1, y1, x2, y2] = prim.split(',').map(Number);
+                    if (targetPrimitives.has(prim)) {
+                        correctLines.push({x1, y1, x2, y2});
+                    } else {
+                        wrongLines.push({x1, y1, x2, y2});
+                    }
+                }
+                
+                drawLines(userCtx, correctLines, '#333333', 5);
+                drawLines(userCtx, wrongLines, '#ff4757', 5);
+            } else {
+                drawLines(userCtx, userLines, '#333333', 5);
+            }
+
+            // Draw active drawing line (Orange & Dotted)
+            if (drawingState.active && drawingState.currentPos) {
+                let c1 = getNodeCoords(drawingState.startNode.x, drawingState.startNode.y);
+                userCtx.strokeStyle = '#ff9f43';
+                userCtx.lineWidth = 4;
+                userCtx.lineCap = 'round';
+                userCtx.setLineDash([8, 12]);
+                
+                // Highlight starting dot
+                userCtx.fillStyle = 'rgba(255, 159, 67, 0.4)';
+                userCtx.beginPath();
+                userCtx.arc(c1.px, c1.py, 12, 0, Math.PI * 2);
+                userCtx.fill();
+                
+                // Draw connecting dotted line
+                userCtx.beginPath();
+                userCtx.moveTo(c1.px, c1.py);
+                userCtx.lineTo(drawingState.currentPos.x, drawingState.currentPos.y);
+                userCtx.stroke();
+                
+                userCtx.setLineDash([]); 
+            }
+        }
+
+        function loadLevel() {
+            currentLevel = levelSelect.value;
+            currentImageIdx = 0;
+            resetUser();
+        }
+
+        function nextImage() {
+            currentImageIdx = (currentImageIdx + 1) % designs[currentLevel].length;
+            resetUser();
+        }
+
+        function resetUser() {
+            userLines = [];
+            showErrors = false;
+            drawingState.active = false;
+            renderAll();
+        }
+
+        // --- Interaction Logic ---
+        function getNearestNode(px, py) {
+            const size = getGridSize();
+            const cellSize = getCellSize();
+            let x = Math.round((px - PADDING) / cellSize);
+            let y = Math.round((py - PADDING) / cellSize);
+            
+            if (x >= 0 && x <= size && y >= 0 && y <= size) {
+                let coords = getNodeCoords(x, y);
+                if (Math.hypot(coords.px - px, coords.py - py) < 20) {
+                    return {x, y};
+                }
+            }
+            return null;
+        }
+
+        function pointToSegmentDist(px, py, x1, y1, x2, y2) {
+            let A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
+            let dot = A * C + B * D;
+            let len_sq = C * C + D * D;
+            let param = -1;
+            if (len_sq != 0) param = dot / len_sq;
+            let xx, yy;
+            if (param < 0) { xx = x1; yy = y1; }
+            else if (param > 1) { xx = x2; yy = y2; }
+            else { xx = x1 + param * C; yy = y1 + param * D; }
+            let dx = px - xx, dy = py - yy;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function handleCanvasDown(e) {
+            const rect = userCanvas.getBoundingClientRect();
+            const px = e.clientX - rect.left;
+            const py = e.clientY - rect.top;
+
+            if (isEraseMode) {
+                let lineToRemove = -1;
+                let minDist = 15; 
+                
+                for (let i = 0; i < userLines.length; i++) {
+                    let l = userLines[i];
+                    let c1 = getNodeCoords(l.x1, l.y1);
+                    let c2 = getNodeCoords(l.x2, l.y2);
+                    let dist = pointToSegmentDist(px, py, c1.px, c1.py, c2.px, c2.py);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        lineToRemove = i;
+                    }
+                }
+                
+                if (lineToRemove !== -1) {
+                    userLines.splice(lineToRemove, 1);
+                    showErrors = false; 
+                    renderAll();
+                    checkWin();
+                }
+            } else {
+                let node = getNearestNode(px, py);
+                if (node) {
+                    drawingState.active = true;
+                    drawingState.startNode = node;
+                    drawingState.currentPos = {x: px, y: py};
+                    renderAll();
+                }
+            }
+        }
+
+        function handleCanvasMove(e) {
+            if (!drawingState.active) return;
+            const rect = userCanvas.getBoundingClientRect();
+            const px = e.clientX - rect.left;
+            const py = e.clientY - rect.top;
+            
+            let node = getNearestNode(px, py);
+            if (node) {
+                let c = getNodeCoords(node.x, node.y);
+                drawingState.currentPos = {x: c.px, y: c.py};
+            } else {
+                drawingState.currentPos = {x: px, y: py};
+            }
+            renderAll();
+        }
+
+        function handleCanvasUp(e) {
+            if (!drawingState.active) return;
+            const rect = userCanvas.getBoundingClientRect();
+            const px = e.clientX - rect.left;
+            const py = e.clientY - rect.top;
+            
+            let node = getNearestNode(px, py);
+            if (node && (node.x !== drawingState.startNode.x || node.y !== drawingState.startNode.y)) {
+                userLines.push({
+                    x1: drawingState.startNode.x, y1: drawingState.startNode.y,
+                    x2: node.x, y2: node.y
+                });
+                showErrors = false;
+            }
+            
+            drawingState.active = false;
+            drawingState.startNode = null;
+            drawingState.currentPos = null;
+            renderAll();
+            checkWin();
+        }
+
+        userCanvas.addEventListener('mousedown', handleCanvasDown);
+        userCanvas.addEventListener('mousemove', handleCanvasMove);
+        window.addEventListener('mouseup', handleCanvasUp);
+        
+        function getTouchPos(e) {
+            const rect = userCanvas.getBoundingClientRect();
+            return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+        }
+        userCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleCanvasDown(getTouchPos(e)); }, {passive: false});
+        userCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleCanvasMove(getTouchPos(e)); }, {passive: false});
+        window.addEventListener('touchend', (e) => { if(drawingState.active) handleCanvasUp(e.changedTouches ? {clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY} : e); });
+
+        // --- Validation & Win Logic ---
+        function areSetsEqual(setA, setB) {
+            if (setA.size !== setB.size) return false;
+            for (let a of setA) if (!setB.has(a)) return false;
+            return true;
+        }
+
+        function checkWin() {
+            const targetLines = designs[currentLevel][currentImageIdx];
+            const targetPrimitives = normalizeLines(targetLines);
+            const userPrimitives = normalizeLines(userLines);
+            
+            if (targetPrimitives.size > 0 && areSetsEqual(targetPrimitives, userPrimitives)) {
+                successModal.classList.add('show');
+                startConfetti();
+            }
+        }
+
+        validateBtn.addEventListener('click', () => {
+            showErrors = true;
+            renderAll();
+        });
+
+        // --- Toolbar Events ---
+        levelSelect.addEventListener('change', loadLevel);
+        diffImageBtn.addEventListener('click', nextImage);
+        
+        drawBtn.addEventListener('click', () => {
+            isEraseMode = false;
+            drawBtn.classList.add('active');
+            eraseBtn.classList.remove('active');
+        });
+
+        eraseBtn.addEventListener('click', () => {
+            isEraseMode = true;
+            eraseBtn.classList.add('active');
+            drawBtn.classList.remove('active');
+        });
+
+        nextBtn.addEventListener('click', () => {
+            successModal.classList.remove('show');
+            stopConfetti();
+            nextImage();
+        });
+
+        // --- Confetti Logic ---
+        const confettiCtx = confettiCanvas.getContext('2d');
+        let confettiParticles = [];
+        let confettiAnimationId;
+
+        function resizeConfetti() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeConfetti);
+        resizeConfetti();
+
+        function startConfetti() {
+            confettiParticles = [];
+            const colors = ['#ff6b6b', '#4ecdc4', '#feca57', '#3b82f6', '#ff9ff3'];
+            for (let i = 0; i < 150; i++) {
+                confettiParticles.push({
+                    x: Math.random() * confettiCanvas.width,
+                    y: Math.random() * confettiCanvas.height - confettiCanvas.height,
+                    size: Math.random() * 10 + 5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speed: Math.random() * 3 + 2,
+                    angle: Math.random() * 360,
+                    spin: Math.random() * 0.2 - 0.1
+                });
+            }
+            if (!confettiAnimationId) renderConfetti();
+        }
+
+        function stopConfetti() {
+            cancelAnimationFrame(confettiAnimationId);
+            confettiAnimationId = null;
+            confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        }
+
+        function renderConfetti() {
+            confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            let active = false;
+            for (let p of confettiParticles) {
+                p.y += p.speed;
+                p.angle += p.spin;
+                if (p.y < confettiCanvas.height) active = true;
+                
+                confettiCtx.save();
+                confettiCtx.translate(p.x, p.y);
+                confettiCtx.rotate(p.angle);
+                confettiCtx.fillStyle = p.color;
+                confettiCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                confettiCtx.restore();
+            }
+            if (active) {
+                confettiAnimationId = requestAnimationFrame(renderConfetti);
+            }
+        }
+
+        // Init
+        loadLevel();
+
+    </script>
+</body>
+</html>
