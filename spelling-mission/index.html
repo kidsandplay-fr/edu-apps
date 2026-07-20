@@ -1,0 +1,336 @@
+
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Orthographe CE2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body { font-family: 'Fredoka', sans-serif; }
+        .bouncy { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .bouncy:hover { transform: scale(1.05) translateY(-4px); }
+        .bouncy:active { transform: scale(0.95); }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            50% { transform: translateX(8px); }
+            75% { transform: translateX(-8px); }
+        }
+        .shake-animation { animation: shake 0.4s ease-in-out; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-animation { animation: float 3s ease-in-out infinite; }
+
+        .correct-btn { background-color: #a7f3d0 !important; color: #065f46 !important; border-color: #34d399 !important; box-shadow: 0 0 15px rgba(52, 211, 153, 0.5); }
+        .wrong-btn { background-color: #fecaca !important; color: #991b1b !important; border-color: #f87171 !important; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-cyan-300 via-blue-400 to-purple-400 text-slate-800 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="max-w-lg w-full bg-white/95 backdrop-blur-sm rounded-[2rem] shadow-2xl p-6 md:p-8 border-4 border-white relative overflow-hidden">
+        
+        <!-- Score and Streak Header -->
+        <div class="flex justify-between items-center mb-6 bg-slate-100 p-3 rounded-2xl">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">⭐</span>
+                <span id="score-display" class="text-xl font-bold text-amber-500">0</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Série</span>
+                <div id="streak-stars" class="text-xl">🤍🤍🤍</div>
+            </div>
+        </div>
+
+        <h1 class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-2 text-center drop-shadow-sm">
+            Mission Orthographe !
+        </h1>
+        
+        <div id="game-container" class="space-y-6 mt-8">
+            <!-- Emoji and Word Area -->
+            <div id="question-area" class="text-center flex flex-col items-center">
+                <div id="emoji-display" class="text-7xl mb-4 float-animation">🌟</div>
+                <p class="text-base text-slate-500 mb-2 font-semibold">Complète le mot mystère :</p>
+                <div id="word-display" class="text-5xl md:text-6xl font-bold text-slate-700 mb-8 tracking-wide">
+                    <!-- Word injected here -->
+                </div>
+                
+                <!-- Multiple Choice Grid -->
+                <div id="options-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full">
+                    <!-- Options injected here -->
+                </div>
+            </div>
+
+            <!-- Feedback Message -->
+            <div id="feedback" class="hidden text-center text-xl md:text-2xl font-bold p-4 rounded-2xl transform transition-all"></div>
+        </div>
+    </div>
+
+    <script>
+        const baseQuestions = [
+            // M devant M, B, P
+            { word: "cha_pion", full: "champion", options: ["m", "n", "l"], answer: "m", emoji: "🏆" },
+            { word: "ta_bour", full: "tambour", options: ["m", "n", "p"], answer: "m", emoji: "🥁" },
+            { word: "co_pote", full: "compote", options: ["m", "n", "s"], answer: "m", emoji: "🍎" },
+            { word: "bo_bon", full: "bonbon", options: ["n", "m", "l"], answer: "n", emoji: "🍬" },
+            { word: "po_pier", full: "pompier", options: ["m", "n", "r"], answer: "m", emoji: "🚒" },
+            { word: "la_pe", full: "lampe", options: ["m", "n", "p"], answer: "m", emoji: "💡" },
+            { word: "cha_bre", full: "chambre", options: ["m", "n", "b"], answer: "m", emoji: "🛏️" },
+            { word: "no_bre", full: "nombre", options: ["m", "n", "d"], answer: "m", emoji: "🔢" },
+            { word: "septe_bre", full: "septembre", options: ["m", "n", "v"], answer: "m", emoji: "📅" },
+            { word: "nove_bre", full: "novembre", options: ["m", "n", "c"], answer: "m", emoji: "🍂" },
+            { word: "colo_be", full: "colombe", options: ["m", "n", "v"], answer: "m", emoji: "🕊️" },
+            { word: "te_pête", full: "tempête", options: ["m", "n", "s"], answer: "m", emoji: "⛈️" },
+            { word: "cha_pignon", full: "champignon", options: ["m", "n", "l"], answer: "m", emoji: "🍄" },
+            { word: "fra_boise", full: "framboise", options: ["m", "n", "v"], answer: "m", emoji: "🍓" },
+            { word: "conco_bre", full: "concombre", options: ["m", "n", "c"], answer: "m", emoji: "🥒" },
+
+            // C ou Ç
+            { word: "gar_on", full: "garçon", options: ["ç", "c", "ss"], answer: "ç", emoji: "👦" },
+            { word: "gla_on", full: "glaçon", options: ["ç", "c", "s"], answer: "ç", emoji: "🧊" },
+            { word: "balan_oire", full: "balançoire", options: ["ç", "c", "s"], answer: "ç", emoji: "🛝" },
+            { word: "ci_ron", full: "citron", options: ["t", "c", "ç"], answer: "t", emoji: "🍋" },
+            { word: "_erise", full: "cerise", options: ["c", "s", "ç"], answer: "c", emoji: "🍒" },
+            { word: "_inéma", full: "cinéma", options: ["c", "s", "ç"], answer: "c", emoji: "🍿" },
+            { word: "le_on", full: "leçon", options: ["ç", "c", "s"], answer: "ç", emoji: "📚" },
+            { word: "ma_on", full: "maçon", options: ["ç", "c", "ss"], answer: "ç", emoji: "🧱" },
+            { word: "rempla_ant", full: "remplaçant", options: ["ç", "c", "s"], answer: "ç", emoji: "🔄" },
+            { word: "cale_on", full: "caleçon", options: ["ç", "c", "ss"], answer: "ç", emoji: "🩳" },
+            { word: "fa_ade", full: "façade", options: ["ç", "c", "s"], answer: "ç", emoji: "🏠" },
+            { word: "re_u", full: "reçu", options: ["ç", "c", "s"], answer: "ç", emoji: "🧾" },
+
+            // S ou SS
+            { word: "poi_on (nage)", full: "poisson", options: ["ss", "s", "c"], answer: "ss", emoji: "🐟" },
+            { word: "poi_on (danger)", full: "poison", options: ["s", "ss", "z"], answer: "s", emoji: "🧪" },
+            { word: "cou_in", full: "coussin", options: ["ss", "s", "c"], answer: "ss", emoji: "🛋️" },
+            { word: "cou_in (famille)", full: "cousin", options: ["s", "ss", "z"], answer: "s", emoji: "👦" },
+            { word: "de_ert", full: "dessert", options: ["ss", "s", "c"], answer: "ss", emoji: "🍰" },
+            { word: "dé_ert", full: "désert", options: ["s", "ss", "z"], answer: "s", emoji: "🐪" },
+            { word: "bro_e", full: "brosse", options: ["ss", "s", "c"], answer: "ss", emoji: "🧹" },
+            { word: "ro_e", full: "rose", options: ["s", "ss", "z"], answer: "s", emoji: "🌹" },
+            { word: "cla_e", full: "classe", options: ["ss", "s", "c"], answer: "ss", emoji: "🏫" },
+            { word: "oi_eau", full: "oiseau", options: ["s", "ss", "z"], answer: "s", emoji: "🐦" },
+            { word: "ta_e", full: "tasse", options: ["ss", "s", "c"], answer: "ss", emoji: "☕" },
+            { word: "vali_e", full: "valise", options: ["s", "ss", "z"], answer: "s", emoji: "🧳" },
+            { word: "frai_e", full: "fraise", options: ["s", "ss", "z"], answer: "s", emoji: "🍓" },
+            { word: "chau_ure", full: "chaussure", options: ["ss", "s", "c"], answer: "ss", emoji: "👞" },
+            { word: "mu_ique", full: "musique", options: ["s", "z", "ss"], answer: "s", emoji: "🎵" },
+
+            // G, GE, GU
+            { word: "pi_on", full: "pigeon", options: ["ge", "g", "j"], answer: "ge", emoji: "🕊️" },
+            { word: "_irafe", full: "girafe", options: ["g", "j", "ge"], answer: "g", emoji: "🦒" },
+            { word: "_enou", full: "genou", options: ["g", "j", "ge"], answer: "g", emoji: "🦵" },
+            { word: "_itare", full: "guitare", options: ["gu", "g", "ge"], answer: "gu", emoji: "🎸" },
+            { word: "ba_e", full: "bague", options: ["gu", "g", "ge"], answer: "gu", emoji: "💍" },
+            { word: "sin_e", full: "singe", options: ["g", "ge", "j"], answer: "g", emoji: "🐒" },
+            { word: "nua_e", full: "nuage", options: ["g", "ge", "j"], answer: "g", emoji: "☁️" },
+            { word: "_lace", full: "glace", options: ["g", "gu", "ge"], answer: "g", emoji: "🍦" },
+            { word: "dra_on", full: "dragon", options: ["g", "gu", "ge"], answer: "g", emoji: "🐉" },
+            { word: "fi_ure", full: "figure", options: ["g", "gu", "ge"], answer: "g", emoji: "👤" },
+            { word: "_êpe", full: "guêpe", options: ["gu", "g", "ge"], answer: "gu", emoji: "🐝" },
+            { word: "va_e", full: "vague", options: ["gu", "g", "ge"], answer: "gu", emoji: "🌊" },
+            { word: "bou_ie", full: "bougie", options: ["g", "ge", "j"], answer: "g", emoji: "🕯️" },
+            { word: "plon_oir", full: "plongeoir", options: ["g", "ge", "j"], answer: "g", emoji: "🏊" },
+            { word: "man_er", full: "manger", options: ["g", "ge", "j"], answer: "g", emoji: "🍽️" },
+
+            // É, È, Ê
+            { word: "_cole", full: "école", options: ["é", "è", "ê"], answer: "é", emoji: "🏫" },
+            { word: "_léphant", full: "éléphant", options: ["é", "è", "ê"], answer: "é", emoji: "🐘" },
+            { word: "p_re", full: "père", options: ["è", "é", "ê"], answer: "è", emoji: "👨" },
+            { word: "m_re", full: "mère", options: ["è", "é", "ê"], answer: "è", emoji: "👩" },
+            { word: "fr_re", full: "frère", options: ["è", "é", "ê"], answer: "è", emoji: "👦" },
+            { word: "f_te", full: "fête", options: ["ê", "é", "è"], answer: "ê", emoji: "🎉" },
+            { word: "t_te", full: "tête", options: ["ê", "é", "è"], answer: "ê", emoji: "🗣️" },
+            { word: "for_t", full: "forêt", options: ["ê", "é", "è"], answer: "ê", emoji: "🌳" },
+            { word: "_toile", full: "étoile", options: ["é", "è", "ê"], answer: "é", emoji: "⭐" },
+            { word: "l_zard", full: "lézard", options: ["é", "è", "ê"], answer: "é", emoji: "🦎" },
+            { word: "sorci_re", full: "sorcière", options: ["è", "é", "ê"], answer: "è", emoji: "🧙‍♀️" },
+            { word: "sir_ne", full: "sirène", options: ["è", "é", "ê"], answer: "è", emoji: "🧜‍♀️" },
+            { word: "r_gle", full: "règle", options: ["è", "é", "ê"], answer: "è", emoji: "📏" },
+            { word: "z_bre", full: "zèbre", options: ["è", "é", "ê"], answer: "è", emoji: "🦓" },
+            { word: "cr_pe", full: "crêpe", options: ["ê", "é", "è"], answer: "ê", emoji: "🥞" },
+
+            // Pluriels / Terminaisons
+            { word: "des cheva_", full: "chevaux", options: ["ux", "s", "x"], answer: "ux", emoji: "🐎" },
+            { word: "des chou_", full: "choux", options: ["x", "s", "z"], answer: "x", emoji: "🥦" },
+            { word: "des bijou_", full: "bijoux", options: ["x", "s", "z"], answer: "x", emoji: "💎" },
+            { word: "des pneu_", full: "pneus", options: ["s", "x", "z"], answer: "s", emoji: "🛞" },
+            { word: "des clou_", full: "clous", options: ["s", "x", "z"], answer: "s", emoji: "🔨" },
+            { word: "des journ_", full: "journaux", options: ["aux", "als", "eau"], answer: "aux", emoji: "📰" },
+            { word: "une souri_", full: "souris", options: ["s", "x", "e"], answer: "s", emoji: "🐭" },
+            { word: "le ne_", full: "nez", options: ["z", "s", "x"], answer: "z", emoji: "👃" },
+            { word: "la croi_", full: "croix", options: ["x", "s", "e"], answer: "x", emoji: "✝️" },
+            { word: "un perdoi_", full: "perdrix", options: ["x", "s", "z"], answer: "x", emoji: "🐦" },
+
+            // Sons AIL, EIL, EUIL, OUIL
+            { word: "le sol_", full: "soleil", options: ["eil", "eille", "ail"], answer: "eil", emoji: "☀️" },
+            { word: "une ab_", full: "abeille", options: ["eille", "eil", "aille"], answer: "eille", emoji: "🐝" },
+            { word: "le port_", full: "portail", options: ["ail", "aille", "eil"], answer: "ail", emoji: "🚪" },
+            { word: "une f_", full: "feuille", options: ["euille", "euil", "ouille"], answer: "euille", emoji: "🍃" },
+            { word: "un écur_", full: "écureuil", options: ["euil", "euille", "eil"], answer: "euil", emoji: "🐿️" },
+            { word: "une gren_", full: "grenouille", options: ["ouille", "ouil", "euille"], answer: "ouille", emoji: "🐸" },
+            { word: "le réveil_", full: "réveil", options: ["eil", "eille", "ail"], answer: "eil", emoji: "⏰" },
+
+            // Terminaisons de verbes
+            { word: "nous chant_", full: "nous chantons", options: ["ons", "ez", "ent"], answer: "ons", emoji: "🎤" },
+            { word: "vous jou_", full: "vous jouez", options: ["ez", "ons", "ent"], answer: "ez", emoji: "🎮" },
+            { word: "ils dans_", full: "ils dansent", options: ["ent", "ons", "ez"], answer: "ent", emoji: "💃" },
+            { word: "tu mang_", full: "tu manges", options: ["es", "e", "ent"], answer: "es", emoji: "🍝" },
+            { word: "je regard_", full: "je regarde", options: ["e", "es", "ent"], answer: "e", emoji: "📺" },
+            { word: "elles fini_", full: "elles finissent", options: ["ssent", "sent", "ont"], answer: "ssent", emoji: "🏁" },
+            { word: "nous all_", full: "nous allons", options: ["ons", "ez", "ont"], answer: "ons", emoji: "🚶" },
+            { word: "je fai_", full: "je fais", options: ["s", "e", "t"], answer: "s", emoji: "🛠️" },
+            { word: "tu fai_", full: "tu fais", options: ["s", "e", "t"], answer: "s", emoji: "🛠️" },
+            { word: "il fai_", full: "il fait", options: ["s", "e", "t"], answer: "t", emoji: "🛠️" },
+            { word: "nous fais_", full: "nous faisons", options: ["ons", "ez", "ont"], answer: "ons", emoji: "🛠️" },
+            { word: "vous fait_", full: "nous faisons", options: ["es", "ez", "ons"], answer: "es", emoji: "🛠️" },
+            { word: "elles f_", full: "vous faites", options: ["ent", "ons", "ont"], answer: "ont", emoji: "🛠️" },
+
+            // O / AU / EAU
+            { word: "chât_", full: "château", options: ["eau", "au", "o"], answer: "eau", emoji: "🏰" },
+            { word: "bat_", full: "bateau", options: ["eau", "au", "o"], answer: "eau", emoji: "🚢" },
+            { word: "ch_ssure", full: "chaussure", options: ["au", "eau", "o"], answer: "au", emoji: "👞" },
+            { word: "m_to", full: "moto", options: ["o", "au", "eau"], answer: "o", emoji: "🏍️" },
+            { word: "crap_", full: "crapaud", options: ["aud", "eau", "o"], answer: "aud", emoji: "🐸" },
+            { word: "aut_mobile", full: "automobile", options: ["o", "au", "eau"], answer: "o", emoji: "🚗" },
+
+            // PH / F
+            { word: "_oto", full: "photo", options: ["ph", "f", "ff"], answer: "ph", emoji: "📸" },
+            { word: "élé_ant", full: "éléphant", options: ["ph", "f", "ff"], answer: "ph", emoji: "🐘" },
+            { word: "_il", full: "fil", options: ["f", "ph", "ff"], answer: "f", emoji: "🧵" },
+            { word: "_leur", full: "fleur", options: ["f", "ph", "ff"], answer: "f", emoji: "🌸" },
+            { word: "d_phin", full: "dauphin", options: ["au", "eau", "o"], answer: "au", emoji: "🐬" } // Bonus O/Au
+        ];
+
+        let questions = [...baseQuestions];
+        let mistakes = JSON.parse(localStorage.getItem('ce2-mistakes') || '[]');
+        let currentQuestion = null;
+        let score = 0;
+        let currentStreak = 0;
+
+        function getNextQuestion() {
+            // 50% chance to ask a previously failed question if there are any
+            if (mistakes.length > 0 && Math.random() > 0.5) {
+                return mistakes.shift();
+            }
+            // Otherwise pick a random question
+            return questions[Math.floor(Math.random() * questions.length)];
+        }
+
+        function updateStreakDisplay() {
+            const streakDisplay = document.getElementById('streak-stars');
+            let stars = '';
+            for(let i=0; i<3; i++) {
+                stars += (i < currentStreak % 3 || currentStreak >= 3 && currentStreak % 3 === 0 && i < 3) ? '⭐' : '🤍';
+            }
+            if(currentStreak > 0 && currentStreak % 3 === 0) stars = '⭐⭐⭐'; // Show full when hit
+            streakDisplay.innerText = stars;
+        }
+
+        function triggerConfetti() {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b']
+            });
+        }
+
+        function renderQuestion() {
+            currentQuestion = getNextQuestion();
+            const display = document.getElementById('word-display');
+            const grid = document.getElementById('options-grid');
+            const feedback = document.getElementById('feedback');
+            const emojiDisplay = document.getElementById('emoji-display');
+            const questionArea = document.getElementById('question-area');
+
+            // Reset animations
+            questionArea.classList.remove('shake-animation');
+            
+            // Format the word: Replace '_' with a visible colored underscore
+            const formattedWord = currentQuestion.word.replace('_', '<span class="text-pink-500 font-extrabold border-b-4 border-pink-500 inline-block min-w-[24px] mx-1 leading-none">_</span>');
+            
+            display.innerHTML = formattedWord;
+            emojiDisplay.innerText = currentQuestion.emoji || "❓";
+            grid.innerHTML = '';
+            
+            feedback.classList.add('hidden');
+            feedback.className = "hidden text-center text-xl md:text-2xl font-bold p-4 rounded-2xl transform transition-all";
+
+            // Shuffle options for randomness
+            const shuffledOptions = [...currentQuestion.options].sort(() => Math.random() - 0.5);
+
+            shuffledOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "bouncy p-4 bg-indigo-50 border-2 border-indigo-100 hover:bg-indigo-100 rounded-2xl text-2xl font-bold text-indigo-700 shadow-sm transition-colors";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(choice, btn) {
+            // Prevent multiple clicks
+            const allBtns = document.querySelectorAll('#options-grid button');
+            allBtns.forEach(b => b.disabled = true);
+
+            const feedback = document.getElementById('feedback');
+            const questionArea = document.getElementById('question-area');
+            const isCorrect = choice === currentQuestion.answer;
+
+            feedback.classList.remove('hidden');
+            
+            if (isCorrect) {
+                // Correct Answer Logic
+                score += 10;
+                currentStreak++;
+                document.getElementById('score-display').innerText = score;
+                updateStreakDisplay();
+
+                feedback.innerText = "🌟 Bravo ! C'est juste !";
+                feedback.classList.add('bg-green-100', 'text-green-700');
+                btn.classList.add('correct-btn');
+                
+                // Show completed word
+                document.getElementById('word-display').innerHTML = currentQuestion.word.replace('_', `<span class="text-green-500">${currentQuestion.answer}</span>`);
+
+                if (currentStreak > 0 && currentStreak % 3 === 0) {
+                    triggerConfetti();
+                    feedback.innerText = "🔥 Incroyable ! Série de 3 !";
+                }
+
+                setTimeout(renderQuestion, 1500);
+            } else {
+                // Wrong Answer Logic
+                currentStreak = 0;
+                updateStreakDisplay();
+                questionArea.classList.add('shake-animation');
+
+                feedback.innerHTML = `Oups ! La bonne réponse était <span class="text-red-600">${currentQuestion.answer}</span>`;
+                feedback.classList.add('bg-red-100', 'text-red-700');
+                btn.classList.add('wrong-btn');
+                
+                // Show corrected word
+                document.getElementById('word-display').innerHTML = currentQuestion.word.replace('_', `<span class="text-red-500 line-through">${choice}</span> <span class="text-green-500">${currentQuestion.answer}</span>`);
+                
+                // Add to mistakes if not already there
+                const isAlreadyMistake = mistakes.some(m => m.word === currentQuestion.word);
+                if(!isAlreadyMistake) {
+                    mistakes.push(currentQuestion);
+                    localStorage.setItem('ce2-mistakes', JSON.stringify(mistakes));
+                }
+                
+                setTimeout(renderQuestion, 2500); // Give a bit more time to read the correction
+            }
+        }
+
+        // Start the game on load
+        window.onload = renderQuestion;
+    </script>
+</body>
+</html>
