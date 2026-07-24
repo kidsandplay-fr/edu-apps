@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kids Reading Adventure - 10 Levels!</title>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --bg-color: #E0F7FA;
+            --card-bg: #FFFFFF;
+            --text-color: #333333;
+            --star-color: #FFC107;
+            --error-color: #FF5252;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #game-container {
+            background-color: var(--card-bg);
+            width: 90%;
+            max-width: 650px;
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: #2196F3;
+        }
+
+        #stars {
+            font-size: 2.5rem;
+            color: var(--star-color);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        #image-display {
+            font-size: 7rem;
+            margin: 15px 0;
+            animation: bounce 2s infinite ease-in-out;
+        }
+
+        #word-display {
+            font-size: 2.5rem;
+            letter-spacing: 4px;
+            margin-bottom: 30px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .missing-letter {
+            color: #FF9800;
+            border-bottom: 5px solid #FF9800;
+            padding: 0 5px;
+            display: inline-block;
+            min-width: 40px;
+        }
+
+        #options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button.choice-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 2.5rem;
+            min-width: 80px;
+            height: 80px;
+            padding: 0 15px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #0D47A1;
+            transition: transform 0.1s, box-shadow 0.1s;
+            font-family: inherit;
+            font-weight: bold;
+            text-transform: lowercase;
+        }
+
+        button.choice-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #0D47A1;
+        }
+
+        button.choice-btn.wrong {
+            background-color: var(--error-color);
+            box-shadow: 0 6px 0 #B71C1C;
+            animation: shake 0.5s;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255,255,255,0.98);
+            border-radius: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            display: none;
+        }
+
+        .overlay h2 {
+            font-size: 2.5rem;
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        .overlay p {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+        }
+
+        .overlay-btn {
+            background-color: #FF9800;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 2rem;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #E65100;
+            font-family: inherit;
+            font-weight: bold;
+            margin: 10px;
+        }
+
+        .overlay-btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #E65100;
+        }
+
+        .lang-btn {
+            background-color: #9C27B0;
+            box-shadow: 0 6px 0 #6A1B9A;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+
+        #progress-text {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Language Selection Screen -->
+        <div id="screen-lang" class="overlay" style="display: flex;">
+            <h2 style="color: #2196F3; margin-bottom: 30px;">Choose Language</h2>
+            <button class="overlay-btn lang-btn" onclick="selectLang('fr')">Français 🇫🇷</button>
+            <button class="overlay-btn lang-btn" onclick="selectLang('el')">Ελληνικά 🇬🇷</button>
+            <button class="overlay-btn lang-btn" onclick="selectLang('en')">English 🇬🇧</button>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="screen-start" class="overlay">
+            <h2 id="ui-start-title" style="color: #FF9800;">Let's Read!</h2>
+            <p id="ui-start-sub">Find the missing letters.</p>
+            <button id="ui-start-btn" class="overlay-btn" onclick="startGame()">Play Game 🚀</button>
+        </div>
+
+        <!-- Restart Level Screen -->
+        <div id="screen-restart" class="overlay">
+            <h2 id="ui-fail-title" style="color: var(--error-color);">Oops! No more stars.</h2>
+            <div style="font-size: 5rem; margin-bottom: 20px;">💫</div>
+            <button id="ui-fail-btn" class="overlay-btn" onclick="restartLevel()">Try Again</button>
+        </div>
+
+        <!-- Level Up Screen -->
+        <div id="screen-levelup" class="overlay">
+            <h2 id="ui-lvl-title">Great Job! 🎉</h2>
+            <p id="ui-lvl-sub">You finished the level!</p>
+            <div style="font-size: 5rem; margin-bottom: 20px;">⭐</div>
+            <button id="ui-lvl-btn" class="overlay-btn" onclick="nextLevel()">Next Level ➡️</button>
+        </div>
+
+        <!-- Game Win Screen -->
+        <div id="screen-win" class="overlay">
+            <h2 id="ui-win-title" style="color: #2196F3;">You are a Star Reader! 🌟🏆</h2>
+            <div style="font-size: 5rem; margin-bottom: 20px;">🎓🎈</div>
+            <button id="ui-win-btn" class="overlay-btn" onclick="resetToLang()">Play Again</button>
+        </div>
+
+        <!-- Game UI -->
+        <header>
+            <h1 id="level-display">Level 1</h1>
+            <div id="stars">⭐⭐⭐</div>
+        </header>
+
+        <div id="image-display">🍎</div>
+        <div id="word-display"><span class="missing-letter">_</span> p p l e</div>
+        
+        <div id="options"></div>
+
+        <div id="progress-text">Word 1 of 6</div>
+    </div>
+
+    <script>
+        // --- MULTILINGUAL DATA & DICTIONARIES (10 Levels each) ---
+        
+        const targetLetters = {
+            'fr': { 
+                1: ['a','o'], 2: ['a','o','i'], 3: ['a','o','i','u'], 4: ['a','i','u','e'], 5: ['o','i','u', 'y'], 
+                6: ['e', 'u', 'è', 'é'], 7: ["pa", "po", "pi", "pu", "pe"], 8: ["na", "no", "ni", "nu", "ne"],
+                9: ["ta", "to", "ti", "tu", "te"], 10: ["sa", "su", "se", "so", "si", "sy"] 
+            },
+            'el': { 
+                1: ['α','ε'], 2: ['α','ε','ι'], 3: ['α','ε','ι','ο'], 4: ['α','η','ε','ο'], 5: ['α','υ','ε','ο'], 
+                6: ['λα', 'λε', 'λι', 'λο'], 7: ['τα', 'τε', 'τι', 'το'], 8: ['μα', 'με', 'μι', 'μο'],
+                9: ['πα', 'πε', 'πι', 'πο'], 10: ['σα', 'σε', 'σι', 'σο']
+            },
+            'en': { 
+                1: ['a','o'], 2: ['a','o','i'], 3: ['a','o','i','u'], 4: ['a','o','i','u','e'], 5: ['ba', 'be', 'bi', 'bo', 'bu'],
+                6: ['ca', 'co', 'cu', 'ce', 'ci'], 7: ['da', 'de', 'di', 'do', 'du'], 8: ['ma', 'me', 'mi', 'mo', 'mu'],
+                9: ['pa', 'pe', 'pi', 'po', 'pu'], 10: ['sa', 'se', 'si', 'so', 'su']
+            }
+        };
+
+        const levelWords = {
+            'fr': {
+                1: [{ letter: 'a', tail: 'rbre', emoji: '🌳' }, { letter: 'a', tail: 'vion', emoji: '✈️' }, { letter: 'a', tail: 'beille', emoji: '🐝' }, { letter: 'o', tail: 'urs', emoji: '🐻' }, { letter: 'o', tail: 'range', emoji: '🍊' }, { letter: 'o', tail: 'ignon', emoji: '🧅' }],
+                2: [{ letter: 'i', tail: 'gloo', emoji: '🏠' }, { letter: 'i', tail: 'guane', emoji: '🦎' }, { letter: 'i', tail: 'mage', emoji: '🖼️' }, { letter: 'a', tail: 'raignée', emoji: '🕷️' }, { letter: 'o', tail: 'céan', emoji: '🌊' }, { letter: 'a', tail: 'nanas', emoji: '🍍' }],
+                3: [{ letter: 'u', tail: 'sine', emoji: '🏭' }, { letter: 'u', tail: 'n', emoji: '1️⃣' }, { letter: 'i', tail: 'dée', emoji: '💡' }, { letter: 'a', tail: 'nge', emoji: '👼' }, { letter: 'o', tail: 'iseau', emoji: '🐦' }, { letter: 'u', tail: 'niforme', emoji: '🥋' }],
+                4: [{ letter: 'e', tail: 'scargot', emoji: '🐌' }, { letter: 'e', tail: 'nfant', emoji: '🧒' }, { letter: 'e', tail: 'nveloppe', emoji: '✉️' }, { letter: 'i', tail: 'nsecte', emoji: '🐛' }, { letter: 'a', tail: 'mi', emoji: '👦' }, { letter: 'u', tail: 'rne', emoji: '🗳️' }],
+                5: [{ letter: 'y', tail: 'oyo', emoji: '🪀' }, { letter: 'y', tail: 'aourt', emoji: '🥛' }, { letter: 'y', tail: 'oga', emoji: '🧘' }, { letter: 'o', tail: 'r', emoji: '🥇' }, { letter: 'i', tail: 'voire', emoji: '🐘' }, { letter: 'u', tail: 'nivers', emoji: '🌌' }],
+                6: [{ letter: 'é', tail: 'cole', emoji: '🏫' }, { letter: 'é', tail: 'toile', emoji: '⭐' }, { letter: 'é', tail: 'ponge', emoji: '🧽' }, { letter: 'e', tail: 'au', emoji: '💧' }, { letter: 'u', tail: 'rgence', emoji: '🚑' }, { letter: 'è', tail: 're', emoji: '⏳' }],
+                7: [{ letter: 'pa', tail: 'rasol', emoji: '⛱️' }, { letter: 'pa', tail: 'pillon', emoji: '🦋' }, { letter: 'po', tail: 'mme', emoji: '🍎' }, { letter: 'po', tail: 'isson', emoji: '🐟' }, { letter: 'pi', tail: 'zza', emoji: '🍕' }, { letter: 'pu', tail: 'its', emoji: '🕳️' }],
+                8: [{ letter: 'na', tail: 'vire', emoji: '🚢' }, { letter: 'no', tail: 'te', emoji: '🎵' }, { letter: 'ni', tail: 'd', emoji: '🪹' }, { letter: 'nu', tail: 'age', emoji: '☁️' }, { letter: 'ne', tail: 'z', emoji: '👃' }, { letter: 'ne', tail: 'ige', emoji: '❄️' }],
+                9: [{ letter: 'ta', tail: 'ble', emoji: '🪑' }, { letter: 'ta', tail: 'pis', emoji: '🪄' }, { letter: 'to', tail: 'mate', emoji: '🍅' }, { letter: 'ti', tail: 'gre', emoji: '🐅' }, { letter: 'tu', tail: 'lipe', emoji: '🌷' }, { letter: 'te', tail: 'nte', emoji: '⛺' }],
+                10: [{ letter: 'sa', tail: 'c', emoji: '🎒' }, { letter: 'su', tail: 'cre', emoji: '🧊' }, { letter: 'se', tail: 'rpent', emoji: '🐍' }, { letter: 'so', tail: 'leil', emoji: '☀️' }, { letter: 'si', tail: 'rène', emoji: '🧜‍♀️' }, { letter: 'sy', tail: 'llabe', emoji: '📝' }]
+            },
+            'el': {
+                1: [{ letter: 'α', tail: 'γελάδα', emoji: '🐄' }, { letter: 'α', tail: 'στέρι', emoji: '⭐' }, { letter: 'α', tail: 'εροπλάνο', emoji: '✈️' }, { letter: 'ε', tail: 'λέφαντας', emoji: '🐘' }, { letter: 'ε', tail: 'λικόπτερο', emoji: '🚁' }, { letter: 'ε', tail: 'λάφι', emoji: '🦌' }],
+                2: [{ letter: 'α', tail: 'λεπού', emoji: '🦊' }, { letter: 'ε', tail: 'πιστήμονας', emoji: '🧑‍🔬' }, { letter: 'ι', tail: 'πποπόταμος', emoji: '🦛' }, { letter: 'ι', tail: 'ππότης', emoji: '🛡️' }, { letter: 'ι', tail: 'στορία', emoji: '📖' }, { letter: 'ι', tail: 'τιά', emoji: '🌳' }],
+                3: [{ letter: 'α', tail: 'ράχνη', emoji: '🕷️' }, { letter: 'ε', tail: 'λικόπτερο', emoji: '🚁' }, { letter: 'ι', tail: 'γκλού', emoji: '🏠' }, { letter: 'ο', tail: 'μπρέλα', emoji: '☂️' }, { letter: 'ο', tail: 'δοντίατρος', emoji: '🦷' }, { letter: 'ο', tail: 'κτώ', emoji: '8️⃣' }],
+                4: [{ letter: 'η', tail: 'λιος', emoji: '☀️' }, { letter: 'η', tail: 'φαίστειο', emoji: '🌋' }, { letter: 'α', tail: 'γόρι', emoji: '👦' }, { letter: 'ε', tail: 'ργαλείο', emoji: '🛠️' }, { letter: 'ο', tail: 'δηγός', emoji: '🚌' }, { letter: 'ο', tail: 'θόνη', emoji: '🖥️' }],
+                5: [{ letter: 'υ', tail: 'πολογιστής', emoji: '💻' }, { letter: 'υ', tail: 'δρόγειος', emoji: '🌍' }, { letter: 'υ', tail: 'ποβρύχιο', emoji: '🚤' }, { letter: 'α', tail: 'ετός', emoji: '🦅' }, { letter: 'ε', tail: 'ρπετό', emoji: '🦎' }, { letter: 'ο', tail: 'ρχήστρα', emoji: '🎻' }],
+                6: [{ letter: 'λα', tail: 'γός', emoji: '🐇' }, { letter: 'λα', tail: 'μπα', emoji: '💡' }, { letter: 'λε', tail: 'ωφορείο', emoji: '🚌' }, { letter: 'λε', tail: 'μόνι', emoji: '🍋' }, { letter: 'λι', tail: 'μνη', emoji: '🏞️' }, { letter: 'λο', tail: 'φος', emoji: '⛰️' }],
+                7: [{ letter: 'τα', tail: 'χυδρόμος', emoji: '📭' }, { letter: 'τα', tail: 'ύρος', emoji: '🐂' }, { letter: 'τε', tail: 'ρας', emoji: '👾' }, { letter: 'τι', tail: 'γρης', emoji: '🐅' }, { letter: 'το', tail: 'ίχος', emoji: '🧱' }, { letter: 'το', tail: 'ξο', emoji: '🏹' }],
+                8: [{ letter: 'μα', tail: 'ϊμού', emoji: '🐒' }, { letter: 'μα', tail: 'τι', emoji: '👁️' }, { letter: 'με', tail: 'λισσα', emoji: '🐝' }, { letter: 'μι', tail: 'κρόφωνο', emoji: '🎤' }, { letter: 'μο', tail: 'λύβι', emoji: '✏️' }, { letter: 'μο', tail: 'τοσυκλέτα', emoji: '🏍️' }],
+                9: [{ letter: 'πα', tail: 'γωτό', emoji: '🍦' }, { letter: 'πα', tail: 'πούτσι', emoji: '👟' }, { letter: 'πε', tail: 'ταλούδα', emoji: '🦋' }, { letter: 'πι', tail: 'τσα', emoji: '🍕' }, { letter: 'πο', tail: 'δήλατο', emoji: '🚲' }, { letter: 'πο', tail: 'ντίκι', emoji: '🐭' }],
+                10: [{ letter: 'σα', tail: 'λιγκάρι', emoji: '🐌' }, { letter: 'σα', tail: 'λάτα', emoji: '🥗' }, { letter: 'σε', tail: 'λήνη', emoji: '🌙' }, { letter: 'σι', tail: 'τάρι', emoji: '🌾' }, { letter: 'σο', tail: 'κολάτα', emoji: '🍫' }, { letter: 'σο', tail: 'ρτς', emoji: '🩳' }]
+            },
+            'en': {
+                1: [{ letter: 'a', tail: 'pple', emoji: '🍎' }, { letter: 'a', tail: 'nt', emoji: '🐜' }, { letter: 'a', tail: 'corn', emoji: '🌰' }, { letter: 'o', tail: 'wl', emoji: '🦉' }, { letter: 'o', tail: 'ctopus', emoji: '🐙' }, { letter: 'o', tail: 'range', emoji: '🍊' }],
+                2: [{ letter: 'i', tail: 'gloo', emoji: '🏠' }, { letter: 'i', tail: 'ce', emoji: '🧊' }, { letter: 'i', tail: 'guana', emoji: '🦎' }, { letter: 'a', tail: 'lligator', emoji: '🐊' }, { letter: 'o', tail: 'x', emoji: '🐂' }, { letter: 'a', tail: 'lien', emoji: '👽' }],
+                3: [{ letter: 'u', tail: 'mbrella', emoji: '☂️' }, { letter: 'u', tail: 'nicorn', emoji: '🦄' }, { letter: 'u', tail: 'fo', emoji: '🛸' }, { letter: 'i', tail: 'sland', emoji: '🏝️' }, { letter: 'a', tail: 'rrow', emoji: '🏹' }, { letter: 'o', tail: 'strich', emoji: '🦅' }],
+                4: [{ letter: 'e', tail: 'lephant', emoji: '🐘' }, { letter: 'e', tail: 'gg', emoji: '🥚' }, { letter: 'e', tail: 'arth', emoji: '🌎' }, { letter: 'e', tail: 'agle', emoji: '🦅' }, { letter: 'u', tail: 'p', emoji: '⬆️' }, { letter: 'i', tail: 'nsect', emoji: '🐛' }],
+                5: [{ letter: 'ba', tail: 't', emoji: '🦇' }, { letter: 'be', tail: 'd', emoji: '🛏️' }, { letter: 'bi', tail: 'rd', emoji: '🐦' }, { letter: 'bo', tail: 'x', emoji: '📦' }, { letter: 'bu', tail: 'g', emoji: '🐛' }, { letter: 'ba', tail: 'lloon', emoji: '🎈' }],
+                6: [{ letter: 'ca', tail: 't', emoji: '🐈' }, { letter: 'ca', tail: 'r', emoji: '🚗' }, { letter: 'co', tail: 'w', emoji: '🐄' }, { letter: 'cu', tail: 'p', emoji: '☕' }, { letter: 'ce', tail: 'nt', emoji: '🪙' }, { letter: 'ci', tail: 'ty', emoji: '🏙️' }],
+                7: [{ letter: 'da', tail: 'd', emoji: '👨' }, { letter: 'de', tail: 'sk', emoji: '🪑' }, { letter: 'di', tail: 'nosaur', emoji: '🦖' }, { letter: 'do', tail: 'g', emoji: '🐕' }, { letter: 'do', tail: 'or', emoji: '🚪' }, { letter: 'du', tail: 'ck', emoji: '🦆' }],
+                8: [{ letter: 'ma', tail: 'p', emoji: '🗺️' }, { letter: 'me', tail: 'lon', emoji: '🍈' }, { letter: 'mi', tail: 'lk', emoji: '🥛' }, { letter: 'mo', tail: 'nkey', emoji: '🐒' }, { letter: 'mo', tail: 'use', emoji: '🐭' }, { letter: 'mu', tail: 'g', emoji: '☕' }],
+                9: [{ letter: 'pa', tail: 'n', emoji: '🍳' }, { letter: 'pa', tail: 'nda', emoji: '🐼' }, { letter: 'pe', tail: 'n', emoji: '🖊️' }, { letter: 'pi', tail: 'g', emoji: '🐷' }, { letter: 'po', tail: 't', emoji: '🍲' }, { letter: 'pu', tail: 'ppy', emoji: '🐶' }],
+                10: [{ letter: 'sa', tail: 'd', emoji: '😢' }, { letter: 'se', tail: 'ven', emoji: '7️⃣' }, { letter: 'si', tail: 'x', emoji: '6️⃣' }, { letter: 'so', tail: 'ck', emoji: '🧦' }, { letter: 'su', tail: 'n', emoji: '☀️' }, { letter: 'sa', tail: 'ndwich', emoji: '🥪' }]
+            }
+        };
+
+        const uiStrings = {
+            'fr': {
+                startTitle: "Jouons !", startSub: "Trouve la lettre manquante.", startBtn: "Jouer 🚀",
+                failTitle: "Oups ! Plus d'étoiles.", failBtn: "Réessayer",
+                lvlTitle: "Bravo ! 🎉", lvlSub: "Niveau terminé !", lvlBtn: "Niveau Suivant ➡️",
+                winTitle: "Tu as fini les 10 niveaux ! 🌟🏆", winBtn: "Rejouer",
+                levelWord: "Niveau", wordWord: "Mot", ofWord: "sur"
+            },
+            'el': {
+                startTitle: "Ας παίξουμε!", startSub: "Βρες το γράμμα που λείπει.", startBtn: "Παίξε 🚀",
+                failTitle: "Ωχ! Χωρίς αστέρια.", failBtn: "Προσπάθησε Ξανά",
+                lvlTitle: "Μπράβο! 🎉", lvlSub: "Ολοκλήρωσες το επίπεδο!", lvlBtn: "Επόμενο ➡️",
+                winTitle: "Τερμάτισες και τα 10! 🌟🏆", winBtn: "Παίξε Ξανά",
+                levelWord: "Επίπεδο", wordWord: "Λέξη", ofWord: "από"
+            },
+            'en': {
+                startTitle: "Let's Read!", startSub: "Find the missing letters.", startBtn: "Play Game 🚀",
+                failTitle: "Oops! No more stars.", failBtn: "Try Again",
+                lvlTitle: "Great Job! 🎉", lvlSub: "You finished the level!", lvlBtn: "Next Level ➡️",
+                winTitle: "You beat all 10 Levels! 🌟🏆", winBtn: "Play Again",
+                levelWord: "Level", wordWord: "Word", ofWord: "of"
+            }
+        };
+
+        // --- GAME STATE ---
+        let currentLang = 'en';
+        let currentLevel = 1;
+        let stars = 3;
+        let activeQuestions = [];
+        let currentQIndex = 0;
+        let currentCorrectLetter = '';
+
+        // --- DOM ELEMENTS ---
+        const elStars = document.getElementById('stars');
+        const elLevel = document.getElementById('level-display');
+        const elImage = document.getElementById('image-display');
+        const elWord = document.getElementById('word-display');
+        const elOptions = document.getElementById('options');
+        const elProgress = document.getElementById('progress-text');
+
+        const screens = {
+            lang: document.getElementById('screen-lang'),
+            start: document.getElementById('screen-start'),
+            restart: document.getElementById('screen-restart'),
+            levelup: document.getElementById('screen-levelup'),
+            win: document.getElementById('screen-win')
+        };
+
+        function hideAllOverlays() {
+            Object.values(screens).forEach(s => s.style.display = 'none');
+        }
+
+        function updateUIText() {
+            const strings = uiStrings[currentLang];
+            document.getElementById('ui-start-title').innerText = strings.startTitle;
+            document.getElementById('ui-start-sub').innerText = strings.startSub;
+            document.getElementById('ui-start-btn').innerText = strings.startBtn;
+            
+            document.getElementById('ui-fail-title').innerText = strings.failTitle;
+            document.getElementById('ui-fail-btn').innerText = strings.failBtn;
+            
+            document.getElementById('ui-lvl-title').innerText = strings.lvlTitle;
+            document.getElementById('ui-lvl-sub').innerText = strings.lvlSub;
+            document.getElementById('ui-lvl-btn').innerText = strings.lvlBtn;
+            
+            document.getElementById('ui-win-title').innerText = strings.winTitle;
+            document.getElementById('ui-win-btn').innerText = strings.winBtn;
+        }
+
+        function selectLang(lang) {
+            currentLang = lang;
+            updateUIText();
+            hideAllOverlays();
+            screens.start.style.display = 'flex';
+        }
+
+        function resetToLang() {
+            hideAllOverlays();
+            screens.lang.style.display = 'flex';
+        }
+
+        function startGame() {
+            currentLevel = 1;
+            initLevel();
+        }
+
+        function restartLevel() {
+            initLevel();
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            initLevel();
+        }
+
+        function initLevel() {
+            hideAllOverlays();
+            stars = 3;
+            currentQIndex = 0;
+            updateStars();
+            
+            elLevel.innerText = `${uiStrings[currentLang].levelWord} ${currentLevel}`;
+            activeQuestions = [...levelWords[currentLang][currentLevel]].sort(() => Math.random() - 0.5);
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = activeQuestions[currentQIndex];
+            currentCorrectLetter = q.letter;
+            
+            // Generate exact number of underscores separated by space depending on target length
+            const underscores = Array(currentCorrectLetter.length).fill('_').join(' ');
+            
+            elImage.innerText = q.emoji;
+            elWord.innerHTML = `<span class="missing-letter">${underscores}</span> ${q.tail.split('').join(' ')}`;
+            
+            const strings = uiStrings[currentLang];
+            elProgress.innerText = `${strings.wordWord} ${currentQIndex + 1} ${strings.ofWord} 6`;
+
+            generateOptionsUI();
+        }
+
+        function generateOptionsUI() {
+            elOptions.innerHTML = '';
+            
+            let allowedLetters = targetLetters[currentLang][currentLevel];
+            let minOptions = 2;
+            let maxOptions = Math.min(4, allowedLetters.length);
+            
+            let numOptions = 2;
+            if (maxOptions > 2) {
+                numOptions = Math.floor(Math.random() * (maxOptions - minOptions + 1)) + minOptions;
+            }
+
+            let choices = new Set([currentCorrectLetter]);
+
+            while (choices.size < numOptions) {
+                let randomLetter = allowedLetters[Math.floor(Math.random() * allowedLetters.length)];
+                choices.add(randomLetter);
+            }
+
+            let finalChoices = Array.from(choices).sort(() => Math.random() - 0.5);
+
+            finalChoices.forEach(letter => {
+                let btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.innerText = letter;
+                btn.onclick = () => handleAnswer(letter, btn);
+                elOptions.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(selectedLetter, buttonElement) {
+            let allBtns = document.querySelectorAll('.choice-btn');
+            allBtns.forEach(b => b.disabled = true);
+
+            if (selectedLetter === currentCorrectLetter) {
+                // Formatting the correctly answered block
+                elWord.innerHTML = `<span class="missing-letter" style="color: #4CAF50; border-color: #4CAF50;">${selectedLetter.split('').join(' ')}</span> ${activeQuestions[currentQIndex].tail.split('').join(' ')}`;
+                buttonElement.style.backgroundColor = '#4CAF50';
+                buttonElement.style.boxShadow = '0 6px 0 #2E7D32';
+
+                setTimeout(() => {
+                    currentQIndex++;
+                    if (currentQIndex >= 6) {
+                        checkLevelComplete();
+                    } else {
+                        loadQuestion();
+                    }
+                }, 1000);
+            } else {
+                buttonElement.classList.add('wrong');
+                stars--;
+                updateStars();
+
+                setTimeout(() => {
+                    buttonElement.classList.remove('wrong');
+                    
+                    if (stars <= 0) {
+                        screens.restart.style.display = 'flex';
+                    } else {
+                        allBtns.forEach(b => b.disabled = false);
+                    }
+                }, 500);
+            }
+        }
+
+        function updateStars() {
+            let starsHtml = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < stars) starsHtml += '⭐';
+                else starsHtml += '❌';
+            }
+            elStars.innerText = starsHtml;
+        }
+
+        function checkLevelComplete() {
+            const maxLevels = Object.keys(targetLetters[currentLang]).length;
+            if (currentLevel === maxLevels) {
+                screens.win.style.display = 'flex';
+            } else {
+                screens.levelup.style.display = 'flex';
+            }
+        }
+    </script>
+</body>
+</html>
