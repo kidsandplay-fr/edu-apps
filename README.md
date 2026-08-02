@@ -9,5 +9,8 @@ Play the games at:
   * Languages: 🇺🇸 
 * [Spelling Mission](https://kidsandplay-fr.github.io/edu-apps/spelling-mission)
   * Multiple choise questions for spelling.
-  * Languages: 🇫🇷 
+  * Languages: 🇫🇷
+* [Learn a Language](https://kidsandplay-fr.github.io/edu-apps/learn-a-language)
+  * Associate words in one language to the same word in another language.
+  * Languages: 🇫🇷 🇬🇷 🇺🇸 
  
