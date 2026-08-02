@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kids Language Learner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0fdf4;
+            background-image: radial-gradient(#bbf7d0 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+        h1, h2, h3, .level-btn {
+            font-family: 'Fredoka', sans-serif;
+        }
+        
+        .card-container {
+            perspective: 1000px;
+        }
+
+        .word-row {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .word-row:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .level-btn:hover {
+            animation: bounce-subtle 1s infinite;
+        }
+
+        @keyframes float-up {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+            30% { opacity: 1; transform: translate(-50%, -100%) scale(1.1); }
+            100% { opacity: 0; transform: translate(-50%, -150%) scale(1); }
+        }
+        .floating-score {
+            animation: float-up 1.2s ease-out forwards;
+        }
+
+        @keyframes pulse-flame {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(249, 115, 22, 0.5)); }
+            50% { transform: scale(1.2); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8)); }
+        }
+        .combo-active {
+            animation: pulse-flame 0.5s infinite;
+        }
+
+        .shape {
+            position: absolute;
+            z-index: -1;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 relative overflow-x-hidden">
+
+    <div class="shape bg-yellow-300 w-32 h-32 rounded-full top-10 left-10 blur-xl"></div>
+    <div class="shape bg-blue-300 w-48 h-48 rounded-full bottom-20 right-10 blur-xl"></div>
+    <div class="shape bg-pink-300 w-24 h-24 rounded-full top-1/2 right-1/4 blur-lg"></div>
+
+    <div class="max-w-4xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        
+        <header class="text-center mb-6 md:mb-10">
+            <h1 class="text-4xl md:text-6xl font-bold text-indigo-600 mb-2 md:mb-4 drop-shadow-md">
+                Bonjour! Hello! Γεια! 👋
+            </h1>
+            <p class="text-lg md:text-2xl text-slate-600 font-semibold">
+                Let's learn some new words!
+            </p>
+        </header>
+
+        <main id="app-container" class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-4 md:p-10 border-2 md:border-4 border-indigo-100 relative min-h-[400px] md:min-h-[500px]">
+            
+            <div id="menu-view" class="block w-full">
+                <h2 class="text-2xl md:text-3xl text-center text-pink-500 mb-4 md:mb-6 font-bold">Choose a Topic</h2>
+                
+                <div class="w-full mb-6 md:mb-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 bg-indigo-50/50 px-6 py-4 sm:px-8 rounded-2xl border-2 border-indigo-100 shadow-inner">
+                    <div class="flex items-center gap-3">
+                        <label for="lang-left" class="font-bold text-slate-600 text-sm md:text-base">From:</label>
+                        <select id="lang-left" onchange="updateLanguages()" class="p-1.5 md:p-2 rounded-xl border-2 border-indigo-200 outline-none bg-white font-semibold text-slate-700 text-sm md:text-base cursor-pointer shadow-sm focus:border-indigo-400 transition-colors">
+                            <option value="en" selected>🇬🇧 English</option>
+                            <option value="fr">🇫🇷 Français</option>
+                            <option value="gr">🇬🇷 Ελληνικά</option>
+                        </select>
+                    </div>
+                    <span class="text-indigo-300 font-bold hidden sm:inline text-xl">➡️</span>
+                    <div class="flex items-center gap-3 mt-2 sm:mt-0">
+                        <label for="lang-right" class="font-bold text-slate-600 text-sm md:text-base">To:</label>
+                        <select id="lang-right" onchange="updateLanguages()" class="p-1.5 md:p-2 rounded-xl border-2 border-indigo-200 outline-none bg-white font-semibold text-slate-700 text-sm md:text-base cursor-pointer shadow-sm focus:border-indigo-400 transition-colors">
+                            <option value="en">🇬🇧 English</option>
+                            <option value="fr" selected>🇫🇷 Français</option>
+                            <option value="gr">🇬🇷 Ελληνικά</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                    <button onclick="loadLevel('numbers')" class="level-btn group relative bg-amber-100 hover:bg-amber-200 border-2 md:border-4 border-amber-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">🔢</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">Numbers</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">Les Nombres</p>
+                    </button>
+
+                    <button onclick="loadLevel('greetings')" class="level-btn group relative bg-sky-100 hover:bg-sky-200 border-2 md:border-4 border-sky-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">👋</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">Greetings</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">Les Salutations</p>
+                    </button>
+
+                    <button onclick="loadLevel('animals')" class="level-btn group relative bg-emerald-100 hover:bg-emerald-200 border-2 md:border-4 border-emerald-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">🐶</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">Animals</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">Les Animaux</p>
+                    </button>
+                    
+                    <button onclick="loadLevel('school')" class="level-btn group relative bg-violet-100 hover:bg-violet-200 border-2 md:border-4 border-violet-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">🎒</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">School</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">L'École</p>
+                    </button>
+
+                    <button onclick="loadLevel('home')" class="level-btn group relative bg-rose-100 hover:bg-rose-200 border-2 md:border-4 border-rose-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">🏠</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">Home</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">La Maison</p>
+                    </button>
+
+                    <button onclick="loadLevel('people')" class="level-btn group relative bg-teal-100 hover:bg-teal-200 border-2 md:border-4 border-teal-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">👩‍⚕️</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">People</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">Les Personnes</p>
+                    </button>
+
+                    <button onclick="loadLevel('colors')" class="level-btn group relative bg-fuchsia-100 hover:bg-fuchsia-200 border-2 md:border-4 border-fuchsia-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">🎨</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">Colors</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">Les Couleurs</p>
+                    </button>
+
+                    <button onclick="loadLevel('sports')" class="level-btn group relative bg-orange-100 hover:bg-orange-200 border-2 md:border-4 border-orange-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">⚽</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">Sports</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">Les Sports</p>
+                    </button>
+
+                    <button onclick="loadLevel('space')" class="level-btn group relative bg-indigo-100 hover:bg-indigo-200 border-2 md:border-4 border-indigo-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">🚀</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">Space</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">L'Espace</p>
+                    </button>
+                    
+                    <button onclick="loadLevel('summer')" class="level-btn group relative bg-cyan-100 hover:bg-cyan-200 border-2 md:border-4 border-cyan-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">☀️</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">Summer</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">L'Été</p>
+                    </button>
+
+                    <button onclick="loadLevel('winter')" class="level-btn group relative bg-slate-100 hover:bg-slate-200 border-2 md:border-4 border-slate-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">⛄</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">Winter</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">L'Hiver</p>
+                    </button>
+
+                    <button onclick="loadLevel('autumn')" class="level-btn group relative bg-red-100 hover:bg-red-200 border-2 md:border-4 border-red-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">🍂</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">Autumn</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">L'Automne</p>
+                    </button>
+
+                    <button onclick="loadLevel('spring')" class="level-btn group relative bg-lime-100 hover:bg-lime-200 border-2 md:border-4 border-lime-300 rounded-2xl p-4 md:p-6 flex flex-col items-center justify-center gap-2 md:gap-4 transition-colors">
+                        <div class="text-4xl md:text-5xl bg-white rounded-full w-14 h-14 md:w-20 md:h-20 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">🌷</div>
+                        <h3 class="text-xl md:text-2xl font-bold text-slate-800">Spring</h3>
+                        <p class="text-slate-600 font-medium text-xs md:text-sm">Le Printemps</p>
+                    </button>
+                </div>
+            </div>
+
+            <div id="vocab-view" class="hidden">
+                <div class="flex items-center justify-between mb-4 md:mb-6 pb-3 md:pb-4 border-b-2 border-slate-100">
+                    <button onclick="showMenu()" class="flex items-center gap-1 md:gap-2 text-indigo-500 hover:text-indigo-700 font-bold transition-colors bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-xs md:text-base">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="hidden sm:inline">Back</span>
+                    </button>
+                    
+                    <h2 id="level-title" class="text-lg sm:text-xl md:text-3xl font-bold text-slate-700 text-center flex-grow truncate px-2">Level Title</h2>
+                    
+                    <div class="flex items-center gap-2 md:gap-4">
+                        <div id="combo-container" class="hidden flex items-center text-sm md:text-xl font-bold text-orange-500 transition-all duration-300">
+                            <span id="combo-icon" class="combo-active mr-1">🔥</span> <span id="combo-text">2x</span>
+                        </div>
+                        <div class="text-sm md:text-lg font-bold text-indigo-600 bg-indigo-50 px-2 md:px-3 py-1 rounded-xl shadow-inner border border-indigo-100 whitespace-nowrap">
+                            Score: <span id="score-text">0</span>
+                        </div>
+                        <div class="w-12 sm:w-16 md:w-20 text-right text-sm md:text-lg font-bold text-slate-500" id="progress-text">0 / 0</div>
+                    </div>
+                </div>
+
+                <div id="timer-bar-container" class="w-full h-2 md:h-3 bg-slate-100 rounded-full mb-4 hidden overflow-hidden shadow-inner border border-slate-200">
+                    <div id="timer-bar" class="h-full w-full bg-emerald-400" style="width: 100%;"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 md:gap-8 mb-4 md:mb-6 px-1 md:px-4">
+                    <div id="header-left" class="text-center font-bold text-base md:text-2xl text-blue-600 flex flex-col sm:flex-row items-center justify-center gap-1 md:gap-2">
+                    </div>
+                    <div id="header-right" class="text-center font-bold text-base md:text-2xl text-red-600 flex flex-col sm:flex-row items-center justify-center gap-1 md:gap-2">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 md:gap-8 px-0 sm:px-2 md:px-4 relative" id="game-board">
+                    <div id="col-left" class="flex flex-col gap-2 md:gap-4"></div>
+                    <div id="col-right" class="flex flex-col gap-2 md:gap-4"></div>
+                </div>
+                
+                <div id="victory-message" class="hidden text-center py-6 md:py-10">
+                    <div class="text-5xl md:text-7xl mb-4 animate-bounce">🎉</div>
+                    <h3 class="text-3xl md:text-4xl font-bold text-emerald-500 mb-2">Magnifique !</h3>
+                    <p class="text-lg md:text-xl text-slate-600">You matched all the words!</p>
+                    <button onclick="showMenu()" class="mt-6 md:mt-8 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-6 md:py-3 md:px-8 rounded-full shadow-lg transition-transform hover:scale-105 text-sm md:text-base">
+                        Play Another Level
+                    </button>
+                </div>
+            </div>
+            
+        </main>
+        
+        <footer class="text-center mt-6 md:mt-8 text-slate-500 font-medium text-sm md:text-base">
+            <p>Amusez-vous bien ! (Have fun!)</p>
+        </footer>
+    </div>
+
+    <script>
+        let langLeft = 'en';
+        let langRight = 'fr';
+
+        const langConfig = {
+            en: { name: "English", flag: "gb", color: "blue" },
+            fr: { name: "Français", flag: "fr", color: "red" },
+            gr: { name: "Ελληνικά", flag: "gr", color: "sky" }
+        };
+
+        const vocabularyData = {
+            numbers: {
+                title: "Numbers / Les Nombres",
+                color: "amber",
+                words: [
+                    { en: "One", fr: "Un", gr: "Ένα", emoji: "1️⃣" },
+                    { en: "Two", fr: "Deux", gr: "Δύο", emoji: "2️⃣" },
+                    { en: "Three", fr: "Trois", gr: "Τρία", emoji: "3️⃣" },
+                    { en: "Four", fr: "Quatre", gr: "Τέσσερα", emoji: "4️⃣" },
+                    { en: "Five", fr: "Cinq", gr: "Πέντε", emoji: "5️⃣" },
+                    { en: "Six", fr: "Six", gr: "Έξι", emoji: "6️⃣" },
+                    { en: "Seven", fr: "Sept", gr: "Επτά", emoji: "7️⃣" },
+                    { en: "Eight", fr: "Huit", gr: "Οκτώ", emoji: "8️⃣" },
+                    { en: "Nine", fr: "Neuf", gr: "Εννέα", emoji: "9️⃣" },
+                    { en: "Ten", fr: "Dix", gr: "Δέκα", emoji: "🔟" }
+                ]
+            },
+            greetings: {
+                title: "Greetings / Les Salutations",
+                color: "sky",
+                words: [
+                    { en: "Hello", fr: "Bonjour", gr: "Γεια", emoji: "👋" },
+                    { en: "Good morning", fr: "Bonjour", gr: "Καλημέρα", emoji: "🌅" },
+                    { en: "Good evening", fr: "Bonsoir", gr: "Καλησπέρα", emoji: "🌆" },
+                    { en: "Good night", fr: "Bonne nuit", gr: "Καληνύχτα", emoji: "🌙" },
+                    { en: "Goodbye", fr: "Au revoir", gr: "Αντίο", emoji: "🚶" },
+                    { en: "Please", fr: "S'il vous plaît", gr: "Παρακαλώ", emoji: "🙏" },
+                    { en: "Thank you", fr: "Merci", gr: "Ευχαριστώ", emoji: "✨" },
+                    { en: "Yes", fr: "Oui", gr: "Ναι", emoji: "👍" },
+                    { en: "No", fr: "Non", gr: "Όχι", emoji: "👎" },
+                    { en: "How are you?", fr: "Comment ça va ?", gr: "Τι κάνεις;", emoji: "❓" }
+                ]
+            },
+            animals: {
+                title: "Animals / Les Animaux",
+                color: "emerald",
+                words: [
+                    { en: "Dog", fr: "Le chien", gr: "Σκύλος", emoji: "🐶" },
+                    { en: "Cat", fr: "Le chat", gr: "Γάτα", emoji: "🐱" },
+                    { en: "Bird", fr: "L'oiseau", gr: "Πουλί", emoji: "🐦" },
+                    { en: "Fish", fr: "Le poisson", gr: "Ψάρι", emoji: "🐟" },
+                    { en: "Mouse", fr: "La souris", gr: "Ποντίκι", emoji: "🐭" },
+                    { en: "Horse", fr: "Le cheval", gr: "Άλογο", emoji: "🐴" },
+                    { en: "Elephant", fr: "L'éléphant", gr: "Ελέφαντας", emoji: "🐘" },
+                    { en: "Lion", fr: "Le lion", gr: "Λιοντάρι", emoji: "🦁" },
+                    { en: "Bear", fr: "L'ours", gr: "Αρκούδα", emoji: "🐻" },
+                    { en: "Monkey", fr: "Le singe", gr: "Μαϊμού", emoji: "🐵" }
+                ]
+            },
+            school: {
+                title: "School / L'École",
+                color: "violet",
+                words: [
+                    { en: "School", fr: "L'école", gr: "Σχολείο", emoji: "🏫" },
+                    { en: "Bus", fr: "Le bus", gr: "Λεωφορείο", emoji: "🚌" },
+                    { en: "Backpack", fr: "Le sac à dos", gr: "Σακίδιο", emoji: "🎒" },
+                    { en: "Blackboard", fr: "Le tableau noir", gr: "Πίνακας", emoji: "🔲" },
+                    { en: "Pen", fr: "Le stylo", gr: "Στυλό", emoji: "🖊️" },
+                    { en: "Pencil", fr: "Le crayon", gr: "Μολύβι", emoji: "✏️" },
+                    { en: "Book", fr: "Le livre", gr: "Βιβλίο", emoji: "📚" },
+                    { en: "Desk", fr: "Le bureau", gr: "Θρανίο", emoji: "🪑" },
+                    { en: "Notebook", fr: "Le cahier", gr: "Τετράδιο", emoji: "📓" },
+                    { en: "Eraser", fr: "La gomme", gr: "Σβήστρα", emoji: "🧽" }
+                ]
+            },
+            home: {
+                title: "Home / La Maison",
+                color: "rose",
+                words: [
+                    { en: "Home", fr: "La maison", gr: "Σπίτι", emoji: "🏠" },
+                    { en: "Bathroom", fr: "La salle de bain", gr: "Μπάνιο", emoji: "🛁" },
+                    { en: "Brush", fr: "La brosse", gr: "Βούρτσα", emoji: "🪥" },
+                    { en: "Shower", fr: "La douche", gr: "Ντους", emoji: "🚿" },
+                    { en: "Living Room", fr: "Le salon", gr: "Σαλόνι", emoji: "🛋️" },
+                    { en: "Kitchen", fr: "La cuisine", gr: "Κουζίνα", emoji: "🍳" },
+                    { en: "Bedroom", fr: "La chambre", gr: "Υπνοδωμάτιο", emoji: "🛏️" },
+                    { en: "Bed", fr: "Le lit", gr: "Κρεβάτι", emoji: "🛌" },
+                    { en: "Table", fr: "La table", gr: "Τραπέζι", emoji: "🍽️" },
+                    { en: "Door", fr: "La porte", gr: "Πόρτα", emoji: "🚪" }
+                ]
+            },
+            people: {
+                title: "People / Les Personnes",
+                color: "teal",
+                words: [
+                    { en: "Girl", fr: "La fille", gr: "Κορίτσι", emoji: "👧" },
+                    { en: "Boy", fr: "Le garçon", gr: "Αγόρι", emoji: "👦" },
+                    { en: "Woman", fr: "La femme", gr: "Γυναίκα", emoji: "👩" },
+                    { en: "Man", fr: "L'homme", gr: "Άντρας", emoji: "👨" },
+                    { en: "Doctor", fr: "Le médecin", gr: "Γιατρός", emoji: "🧑‍⚕️" },
+                    { en: "Teacher", fr: "Le professeur", gr: "Δάσκαλος", emoji: "🧑‍🏫" },
+                    { en: "Police", fr: "Le policier", gr: "Αστυνομικός", emoji: "👮" },
+                    { en: "Chef", fr: "Le cuisinier", gr: "Σεφ", emoji: "🧑‍🍳" },
+                    { en: "Baby", fr: "Le bébé", gr: "Μωρό", emoji: "👶" },
+                    { en: "Friend", fr: "L'ami", gr: "Φίλος", emoji: "🤝" }
+                ]
+            },
+            colors: {
+                title: "Colors / Les Couleurs",
+                color: "fuchsia",
+                words: [
+                    { en: "Red", fr: "Rouge", gr: "Κόκκινο", emoji: "🔴" },
+                    { en: "Blue", fr: "Bleu", gr: "Μπλε", emoji: "🔵" },
+                    { en: "Green", fr: "Vert", gr: "Πράσινο", emoji: "🟢" },
+                    { en: "Yellow", fr: "Jaune", gr: "Κίτρινο", emoji: "🟡" },
+                    { en: "Orange", fr: "Orange", gr: "Πορτοκαλί", emoji: "🟠" },
+                    { en: "Purple", fr: "Violet", gr: "Μωβ", emoji: "🟣" },
+                    { en: "Pink", fr: "Rose", gr: "Ροζ", emoji: "🩷" },
+                    { en: "Black", fr: "Noir", gr: "Μαύρο", emoji: "⚫" },
+                    { en: "White", fr: "Blanc", gr: "Λευκό", emoji: "⚪" },
+                    { en: "Brown", fr: "Marron", gr: "Καφέ", emoji: "🟤" }
+                ]
+            },
+            sports: {
+                title: "Sports / Les Sports",
+                color: "orange",
+                words: [
+                    { en: "Soccer", fr: "Le football", gr: "Ποδόσφαιρο", emoji: "⚽" },
+                    { en: "Basketball", fr: "Le basket", gr: "Μπάσκετ", emoji: "🏀" },
+                    { en: "Tennis", fr: "Le tennis", gr: "Τένις", emoji: "🎾" },
+                    { en: "Swimming", fr: "La natation", gr: "Κολύμβηση", emoji: "🏊" },
+                    { en: "Cycling", fr: "Le cyclisme", gr: "Ποδηλασία", emoji: "🚴" },
+                    { en: "Running", fr: "La course", gr: "Τρέξιμο", emoji: "🏃" },
+                    { en: "Skiing", fr: "Le ski", gr: "Σκι", emoji: "⛷️" },
+                    { en: "Gymnastics", fr: "La gymnastique", gr: "Γυμναστική", emoji: "🤸" },
+                    { en: "Boxing", fr: "La boxe", gr: "Πυγμαχία", emoji: "🥊" },
+                    { en: "Ice Skating", fr: "Le patinage", gr: "Πατινάζ", emoji: "⛸️" }
+                ]
+            },
+            space: {
+                title: "Space / L'Espace",
+                color: "indigo",
+                words: [
+                    { en: "Earth", fr: "La Terre", gr: "Γη", emoji: "🌍" },
+                    { en: "Moon", fr: "La lune", gr: "Φεγγάρι", emoji: "🌙" },
+                    { en: "Sun", fr: "Le soleil", gr: "Ήλιος", emoji: "☀️" },
+                    { en: "Star", fr: "L'étoile", gr: "Αστέρι", emoji: "⭐" },
+                    { en: "Rocket", fr: "La fusée", gr: "Πύραυλος", emoji: "🚀" },
+                    { en: "Alien", fr: "L'extraterrestre", gr: "Εξωγήινος", emoji: "👽" },
+                    { en: "Satellite", fr: "Le satellite", gr: "Δορυφόρος", emoji: "🛰️" },
+                    { en: "Astronaut", fr: "L'astronaute", gr: "Αστροναύτης", emoji: "👩‍🚀" },
+                    { en: "Planet", fr: "La planète", gr: "Πλανήτης", emoji: "🪐" },
+                    { en: "Telescope", fr: "Le télescope", gr: "Τηλεσκόπιο", emoji: "🔭" }
+                ]
+            },
+            summer: {
+                title: "Summer / L'Été",
+                color: "cyan",
+                words: [
+                    { en: "Summer", fr: "L'été", gr: "Καλοκαίρι", emoji: "😎" },
+                    { en: "Sun", fr: "Le soleil", gr: "Ήλιος", emoji: "☀️" },
+                    { en: "Beach", fr: "La plage", gr: "Παραλία", emoji: "🏖️" },
+                    { en: "Island", fr: "L'île", gr: "Νησί", emoji: "🏝️" },
+                    { en: "Wave", fr: "La vague", gr: "Κύμα", emoji: "🌊" },
+                    { en: "Shell", fr: "Le coquillage", gr: "Κοχύλι", emoji: "🐚" },
+                    { en: "Ice Cream", fr: "La glace", gr: "Παγωτό", emoji: "🍦" },
+                    { en: "Swimsuit", fr: "Le maillot", gr: "Μαγιό", emoji: "🩱" },
+                    { en: "Sunglasses", fr: "Les lunettes de soleil", gr: "Γυαλιά ηλίου", emoji: "🕶️" },
+                    { en: "Sandcastle", fr: "Le château de sable", gr: "Κάστρο στην άμμο", emoji: "🏰" }
+                ]
+            },
+            winter: {
+                title: "Winter / L'Hiver",
+                color: "slate",
+                words: [
+                    { en: "Winter", fr: "L'hiver", gr: "Χειμώνας", emoji: "❄️" },
+                    { en: "Santa", fr: "Le Père Noël", gr: "Άγιος Βασίλης", emoji: "🎅" },
+                    { en: "Snow", fr: "La neige", gr: "Χιόνι", emoji: "🌨️" },
+                    { en: "Ski", fr: "Le ski", gr: "Σκι", emoji: "⛷️" },
+                    { en: "Snowman", fr: "Le bonhomme de neige", gr: "Χιονάνθρωπος", emoji: "⛄" },
+                    { en: "Ice", fr: "La glace", gr: "Πάγος", emoji: "🧊" },
+                    { en: "Gloves", fr: "Les gants", gr: "Γάντια", emoji: "🧤" },
+                    { en: "Scarf", fr: "L'écharpe", gr: "Κασκόλ", emoji: "🧣" },
+                    { en: "Sled", fr: "Le traîneau", gr: "Έλκηθρο", emoji: "🛷" },
+                    { en: "Hot Chocolate", fr: "Le chocolat chaud", gr: "Ζεστή Σοκολάτα", emoji: "☕" }
+                ]
+            },
+            autumn: {
+                title: "Autumn / L'Automne",
+                color: "red",
+                words: [
+                    { en: "Autumn", fr: "L'automne", gr: "Φθινόπωρο", emoji: "🍂" },
+                    { en: "Leaf", fr: "La feuille", gr: "Φύλλο", emoji: "🍁" },
+                    { en: "Chestnut", fr: "Le marron", gr: "Κάστανο", emoji: "🌰" },
+                    { en: "Pumpkin", fr: "La citrouille", gr: "Κολοκύθα", emoji: "🎃" },
+                    { en: "Wind", fr: "Le vent", gr: "Άνεμος", emoji: "💨" },
+                    { en: "Apple", fr: "La pomme", gr: "Μήλο", emoji: "🍎" },
+                    { en: "Mushroom", fr: "Le champignon", gr: "Μανιτάρι", emoji: "🍄" },
+                    { en: "Squirrel", fr: "L'écureuil", gr: "Σκίουρος", emoji: "🐿️" },
+                    { en: "Rain", fr: "La pluie", gr: "Βροχή", emoji: "🌧️" },
+                    { en: "Harvest", fr: "La récolte", gr: "Συγκομιδή", emoji: "🌾" }
+                ]
+            },
+            spring: {
+                title: "Spring / Le Printemps",
+                color: "lime",
+                words: [
+                    { en: "Spring", fr: "Le printemps", gr: "Άνοιξη", emoji: "🌱" },
+                    { en: "Flower", fr: "La fleur", gr: "Λουλούδι", emoji: "🌸" },
+                    { en: "Butterfly", fr: "Le papillon", gr: "Πεταλούδα", emoji: "🦋" },
+                    { en: "Bee", fr: "L'abeille", gr: "Μέλισσα", emoji: "🐝" },
+                    { en: "Ladybug", fr: "La coccinelle", gr: "Πασχαλίτσα", emoji: "🐞" },
+                    { en: "Bird", fr: "L'oiseau", gr: "Πουλί", emoji: "🐦" },
+                    { en: "Rainbow", fr: "L'arc-en-ciel", gr: "Ουράνιο τόξο", emoji: "🌈" },
+                    { en: "Seed", fr: "La graine", gr: "Σπόρος", emoji: "🌰" },
+                    { en: "Sprout", fr: "La pousse", gr: "Βλαστάρι", emoji: "🪴" },
+                    { en: "Tulip", fr: "La tulipe", gr: "Τουλίπα", emoji: "🌷" }
+                ]
+            }
+        };
+
+        const menuView = document.getElementById('menu-view');
+        const vocabView = document.getElementById('vocab-view');
+        const levelTitle = document.getElementById('level-title');
+        const colLeft = document.getElementById('col-left');
+        const colRight = document.getElementById('col-right');
+        const headerLeft = document.getElementById('header-left');
+        const headerRight = document.getElementById('header-right');
+        const progressText = document.getElementById('progress-text');
+        const victoryMessage = document.getElementById('victory-message');
+        const gameBoard = document.getElementById('game-board');
+        const scoreText = document.getElementById('score-text');
+        const comboContainer = document.getElementById('combo-container');
+        const comboText = document.getElementById('combo-text');
+        const comboIcon = document.getElementById('combo-icon');
+
+        const timerBarContainer = document.getElementById('timer-bar-container');
+        const timerBar = document.getElementById('timer-bar');
+
+        let audioInitialized = false;
+        let successSynth, errorSynth, decaySynth;
+
+        async function initAudio() {
+            if (audioInitialized) return;
+            if (typeof Tone === 'undefined') return;
+
+            try {
+                await Tone.start();
+                
+                successSynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 1 }
+                }).toDestination();
+                successSynth.volume.value = -5;
+
+                errorSynth = new Tone.MembraneSynth({
+                    pitchDecay: 0.01,
+                    octaves: 2,
+                    oscillator: { type: "sine" },
+                    envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.2 }
+                }).toDestination();
+                errorSynth.volume.value = -10;
+                
+                decaySynth = new Tone.MembraneSynth({
+                    pitchDecay: 0.1,
+                    octaves: 1.5,
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 0.05, decay: 0.4, sustain: 0, release: 0.1 }
+                }).toDestination();
+                decaySynth.volume.value = -12;
+
+                audioInitialized = true;
+            } catch (error) {
+                console.error("Audio initialization failed:", error);
+            }
+        }
+
+        function playSound(type) {
+            if (!audioInitialized) return;
+            if (type === 'success' && successSynth) successSynth.triggerAttackRelease(["C5", "E5", "G5"], "8n");
+            if (type === 'error' && errorSynth) errorSynth.triggerAttackRelease("C2", "8n");
+            if (type === 'decay' && decaySynth) decaySynth.triggerAttackRelease("G1", "8n");
+        }
+
+        let currentLevelData = null;
+        let remainingWords = [];   
+        let matchedCount = 0;      
+        let totalPairs = 0;
+        
+        let score = 0;
+        let streak = 0;
+        let comboMultiplier = 1;
+        
+        let leftSlots = Array(5).fill(null);
+        let rightSlots = Array(5).fill(null);
+        let pendingEmptyPairs = 0;
+        let activePairsCount = 0;
+        
+        let selectedLeft = null;     
+        let selectedRight = null;     
+        let isCheckingMatch = false; 
+
+        let timerFrame;
+        let timerEndTime;
+        const COMBO_TIME_LIMIT = 5000; // 5 seconds
+
+        function startComboTimer() {
+            if (matchedCount >= totalPairs) return;
+            
+            timerBarContainer.classList.remove('hidden');
+            timerEndTime = Date.now() + COMBO_TIME_LIMIT;
+            cancelAnimationFrame(timerFrame);
+            
+            function updateTimer() {
+                const now = Date.now();
+                const remaining = timerEndTime - now;
+                
+                if (remaining <= 0) {
+                    timerBar.style.width = '0%';
+                    triggerComboDecay();
+                } else {
+                    const percent = (remaining / COMBO_TIME_LIMIT) * 100;
+                    timerBar.style.width = percent + '%';
+                    
+                    if (percent < 25) {
+                        timerBar.className = 'h-full w-full bg-red-500 transition-colors';
+                    } else if (percent < 50) {
+                        timerBar.className = 'h-full w-full bg-orange-400 transition-colors';
+                    } else {
+                        timerBar.className = 'h-full w-full bg-emerald-400 transition-colors';
+                    }
+                    
+                    timerFrame = requestAnimationFrame(updateTimer);
+                }
+            }
+            updateTimer();
+        }
+
+        function stopComboTimer() {
+            cancelAnimationFrame(timerFrame);
+            timerBarContainer.classList.add('hidden');
+        }
+
+        function triggerComboDecay() {
+            if (streak > 0) {
+                streak = 0;
+                comboMultiplier = 1;
+                
+                // Visual decay cue
+                comboText.textContent = "Lost!";
+                comboIcon.textContent = "💨";
+                comboContainer.classList.add('text-red-500', 'animate-pulse');
+                comboContainer.classList.remove('hidden');
+                
+                playSound('decay');
+                
+                setTimeout(() => {
+                    comboContainer.classList.remove('text-red-500', 'animate-pulse');
+                    comboIcon.textContent = "🔥";
+                    updateScoreDisplay();
+                }, 1000);
+            }
+            stopComboTimer();
+        }
+
+        function updateLanguages() {
+            langLeft = document.getElementById('lang-left').value;
+            langRight = document.getElementById('lang-right').value;
+        }
+
+        function showMenu() {
+            vocabView.classList.add('hidden');
+            menuView.classList.remove('hidden');
+            stopComboTimer();
+        }
+
+        function loadLevel(levelKey) {
+            currentLevelData = vocabularyData[levelKey];
+            if (!currentLevelData) return;
+
+            updateLanguages();
+
+            matchedCount = 0;
+            totalPairs = currentLevelData.words.length;
+            remainingWords = [...currentLevelData.words]; 
+            
+            score = 0;
+            streak = 0;
+            comboMultiplier = 1;
+            updateScoreDisplay();
+            stopComboTimer();
+            
+            leftSlots = Array(5).fill(null);
+            rightSlots = Array(5).fill(null);
+            pendingEmptyPairs = 0;
+            activePairsCount = 0;
+            
+            selectedLeft = null;
+            selectedRight = null;
+            isCheckingMatch = false;
+            
+            levelTitle.textContent = currentLevelData.title;
+            levelTitle.className = `text-lg sm:text-xl md:text-3xl font-bold text-center flex-grow truncate px-2 text-${currentLevelData.color}-600`;
+            updateProgress();
+
+            const hLeft = langConfig[langLeft];
+            const hRight = langConfig[langRight];
+            
+            headerLeft.innerHTML = `
+                <img src="https://flagcdn.com/w40/${hLeft.flag}.png" alt="${hLeft.name} Flag" class="w-5 md:w-8 h-auto rounded shadow-sm border border-slate-200">
+                <span class="text-${hLeft.color}-600">${hLeft.name}</span>
+            `;
+            headerRight.innerHTML = `
+                <img src="https://flagcdn.com/w40/${hRight.flag}.png" alt="${hRight.name} Flag" class="w-5 md:w-8 h-auto rounded shadow-sm border border-slate-200">
+                <span class="text-${hRight.color}-600">${hRight.name}</span>
+            `;
+
+            gameBoard.classList.remove('hidden');
+            victoryMessage.classList.add('hidden');
+            
+            menuView.classList.add('hidden');
+            vocabView.classList.remove('hidden');
+
+            initializeBoard();
+            
+            document.getElementById('app-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function updateProgress() {
+            progressText.textContent = `${matchedCount} / ${totalPairs}`;
+        }
+
+        function updateScoreDisplay() {
+            scoreText.textContent = score;
+            if (comboMultiplier > 1) {
+                comboContainer.classList.remove('hidden');
+                comboText.textContent = comboMultiplier + 'x';
+            } else {
+                comboContainer.classList.add('hidden');
+            }
+        }
+
+        function showFloatingScore(points, leftBtn, rightBtn) {
+            const boardRect = gameBoard.getBoundingClientRect();
+            const leftRect = leftBtn.getBoundingClientRect();
+            const rightRect = rightBtn.getBoundingClientRect();
+            
+            const centerX = (leftRect.right + rightRect.left) / 2 - boardRect.left;
+            const centerY = (leftRect.top + rightRect.top) / 2 - boardRect.top;
+
+            const floatEl = document.createElement('div');
+            floatEl.className = 'absolute text-2xl md:text-5xl font-black text-emerald-500 drop-shadow-lg pointer-events-none z-50 floating-score flex flex-col items-center justify-center text-center';
+            
+            let text = `+${points}`;
+            if (comboMultiplier > 1) text += `<br><span class="text-xl md:text-3xl text-orange-400 mt-1 drop-shadow">Combo ${comboMultiplier}x!</span>`;
+            if (points % 10 === 5) text += `<br><span class="text-base md:text-2xl text-sky-400 mt-1 drop-shadow">⚡ Speed Bonus!</span>`;
+            
+            floatEl.innerHTML = text;
+            floatEl.style.left = centerX + 'px';
+            floatEl.style.top = centerY + 'px';
+            floatEl.style.transform = 'translate(-50%, -50%)';
+            gameBoard.appendChild(floatEl);
+
+            setTimeout(() => floatEl.remove(), 1200);
+        }
+
+        function initializeBoard() {
+            colLeft.innerHTML = '';
+            colRight.innerHTML = '';
+
+            for (let i = 0; i < 5; i++) {
+                const leftSlot = document.createElement('div');
+                leftSlot.className = 'word-slot w-full h-16 sm:h-20 md:h-24 transition-all duration-300';
+                leftSlot.dataset.slotIndex = i;
+                colLeft.appendChild(leftSlot);
+
+                const rightSlot = document.createElement('div');
+                rightSlot.className = 'word-slot w-full h-16 sm:h-20 md:h-24 transition-all duration-300';
+                rightSlot.dataset.slotIndex = i;
+                colRight.appendChild(rightSlot);
+            }
+            fillEmptySlots(5);
+        }
+
+        function fillEmptySlots(maxToFill = 2) {
+            const leftEmptyIndices = leftSlots.map((val, idx) => val === null ? idx : -1).filter(idx => idx !== -1);
+            const rightEmptyIndices = rightSlots.map((val, idx) => val === null ? idx : -1).filter(idx => idx !== -1);
+            
+            const slotsAvailable = Math.min(leftEmptyIndices.length, rightEmptyIndices.length, maxToFill);
+            const numToAdd = Math.min(slotsAvailable, remainingWords.length);
+            
+            if (numToAdd === 0) return;
+
+            shuffleArray(remainingWords);
+            const newWords = remainingWords.splice(0, numToAdd);
+            newWords.forEach(w => w.id = Math.random().toString(36).substr(2, 9));
+
+            let leftNewWords = [...newWords];
+            let rightNewWords = [...newWords];
+            
+            shuffleArray(leftNewWords);
+            shuffleArray(rightNewWords);
+            shuffleArray(leftEmptyIndices);
+            shuffleArray(rightEmptyIndices);
+
+            for (let i = 0; i < numToAdd; i++) {
+                const leftIdx = leftEmptyIndices[i];
+                const rightIdx = rightEmptyIndices[i];
+                
+                leftSlots[leftIdx] = leftNewWords[i];
+                rightSlots[rightIdx] = rightNewWords[i];
+                
+                renderButton('left', leftIdx, leftNewWords[i]);
+                renderButton('right', rightIdx, rightNewWords[i]);
+            }
+            
+            activePairsCount += numToAdd;
+            pendingEmptyPairs = Math.max(0, pendingEmptyPairs - numToAdd);
+        }
+
+        function renderButton(side, slotIndex, word) {
+            const color = currentLevelData.color;
+            const btn = document.createElement('button');
+            
+            let baseClasses = `vocab-btn w-full h-full p-2 md:p-4 rounded-xl md:rounded-2xl border-2 md:border-4 border-${color}-100 bg-white hover:bg-${color}-50 hover:border-${color}-300 transition-all duration-300 shadow-sm text-sm md:text-xl font-bold text-slate-700 flex items-center leading-tight opacity-0 scale-90`;
+
+            btn.dataset.id = word.id;
+            btn.dataset.side = side;
+            btn.dataset.dropTime = Date.now();
+            
+            if (side === 'left') {
+                btn.className = `${baseClasses} text-left gap-2 md:gap-4`;
+                btn.innerHTML = `<span class="text-xl md:text-4xl bg-${color}-100 p-1.5 md:p-2 rounded-lg md:rounded-xl shadow-inner flex-shrink-0">${word.emoji}</span> <span class="break-words leading-tight w-full">${word[langLeft]}</span>`;
+            } else {
+                btn.className = `${baseClasses} text-left gap-2 md:gap-4`;
+                btn.innerHTML = `<span class="text-xl md:text-4xl bg-slate-100 p-1.5 md:p-2 rounded-lg md:rounded-xl shadow-inner flex-shrink-0 grayscale opacity-70">💬</span> <span class="break-words leading-tight w-full">${word[langRight]}</span>`;
+            }
+
+            btn.onclick = () => handleSelection(btn, side);
+            
+            const col = side === 'left' ? colLeft : colRight;
+            const slot = col.children[slotIndex];
+            slot.innerHTML = ''; 
+            slot.appendChild(btn);
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    btn.classList.remove('opacity-0', 'scale-90');
+                    btn.classList.add('opacity-100', 'scale-100');
+                });
+            });
+        }
+
+        function handleSelection(btnElement, side) {
+            if (isCheckingMatch) return; 
+            initAudio(); 
+            
+            const color = currentLevelData.color;
+            const selectedStyleClasses = [`bg-${color}-100`, `border-${color}-500`, 'scale-[1.02]', 'shadow-inner', 'ring-4', `ring-${color}-200`];
+
+            if (side === 'left') {
+                if (selectedLeft) selectedLeft.classList.remove(...selectedStyleClasses);
+                if (selectedLeft === btnElement) selectedLeft = null;
+                else {
+                    selectedLeft = btnElement;
+                    selectedLeft.classList.add(...selectedStyleClasses);
+                }
+            } else {
+                if (selectedRight) selectedRight.classList.remove(...selectedStyleClasses);
+                if (selectedRight === btnElement) selectedRight = null;
+                else {
+                    selectedRight = btnElement;
+                    selectedRight.classList.add(...selectedStyleClasses);
+                }
+            }
+
+            if (selectedLeft && selectedRight) checkMatch();
+        }
+
+        function checkMatch() {
+            isCheckingMatch = true;
+            
+            const idLeft = selectedLeft.dataset.id;
+            const idRight = selectedRight.dataset.id;
+            const color = currentLevelData.color;
+
+            if (idLeft === idRight) {
+                const leftIndex = parseInt(selectedLeft.parentElement.dataset.slotIndex);
+                const rightIndex = parseInt(selectedRight.parentElement.dataset.slotIndex);
+
+                streak++;
+                if (streak >= 5) comboMultiplier = 3;
+                else if (streak >= 3) comboMultiplier = 2;
+                else comboMultiplier = 1;
+
+                const dropTimeLeft = parseInt(selectedLeft.dataset.dropTime);
+                const dropTimeRight = parseInt(selectedRight.dataset.dropTime);
+                const now = Date.now();
+                let speedBonus = ((now - dropTimeLeft <= 3000) || (now - dropTimeRight <= 3000)) ? 5 : 0;
+
+                const pointsEarned = (10 * comboMultiplier) + speedBonus;
+                score += pointsEarned;
+                
+                updateScoreDisplay();
+                showFloatingScore(pointsEarned, selectedLeft, selectedRight);
+                playSound('success');
+
+                // Start or reset timer for the NEXT match
+                startComboTimer();
+
+                selectedLeft.classList.replace(`border-${color}-500`, 'border-emerald-500');
+                selectedLeft.classList.replace(`bg-${color}-100`, 'bg-emerald-200');
+                selectedLeft.classList.replace(`ring-${color}-200`, 'ring-emerald-200');
+                
+                selectedRight.classList.replace(`border-${color}-500`, 'border-emerald-500');
+                selectedRight.classList.replace(`bg-${color}-100`, 'bg-emerald-200');
+                selectedRight.classList.replace(`ring-${color}-200`, 'ring-emerald-200');
+
+                setTimeout(() => {
+                    selectedLeft.classList.remove('opacity-100', 'scale-100', 'scale-[1.02]');
+                    selectedRight.classList.remove('opacity-100', 'scale-100', 'scale-[1.02]');
+                    selectedLeft.classList.add('opacity-0', 'scale-90');
+                    selectedRight.classList.add('opacity-0', 'scale-90');
+                    
+                    setTimeout(() => {
+                        selectedLeft.remove();
+                        selectedRight.remove();
+                        
+                        leftSlots[leftIndex] = null;
+                        rightSlots[rightIndex] = null;
+                        activePairsCount--;
+                        
+                        matchedCount++;
+                        updateProgress();
+                        
+                        pendingEmptyPairs++;
+
+                        if (matchedCount === totalPairs) {
+                            showVictory();
+                        } else if (pendingEmptyPairs >= 2 || (pendingEmptyPairs > 0 && activePairsCount === 0)) {
+                            fillEmptySlots(pendingEmptyPairs);
+                        }
+                        
+                        selectedLeft = null;
+                        selectedRight = null;
+                        isCheckingMatch = false;
+                    }, 300); 
+                }, 400); 
+                
+            } else {
+                streak = 0;
+                comboMultiplier = 1;
+                updateScoreDisplay();
+                playSound('error');
+                stopComboTimer(); 
+
+                selectedLeft.classList.replace(`border-${color}-500`, 'border-red-400');
+                selectedRight.classList.replace(`border-${color}-500`, 'border-red-400');
+                selectedLeft.classList.replace(`ring-${color}-200`, 'ring-red-200');
+                selectedRight.classList.replace(`ring-${color}-200`, 'ring-red-200');
+                
+                selectedLeft.animate([{ transform: 'translateX(-5px) scale(1.02)' }, { transform: 'translateX(5px) scale(1.02)' }, { transform: 'translateX(0) scale(1.02)' }], { duration: 300 });
+                selectedRight.animate([{ transform: 'translateX(-5px) scale(1.02)' }, { transform: 'translateX(5px) scale(1.02)' }, { transform: 'translateX(0) scale(1.02)' }], { duration: 300 });
+
+                setTimeout(() => {
+                    selectedLeft.classList.remove('border-red-400', `bg-${color}-100`, 'scale-[1.02]', 'shadow-inner', 'ring-4', 'ring-red-200');
+                    selectedRight.classList.remove('border-red-400', `bg-${color}-100`, 'scale-[1.02]', 'shadow-inner', 'ring-4', 'ring-red-200');
+                    
+                    selectedLeft = null;
+                    selectedRight = null;
+                    isCheckingMatch = false;
+                }, 800);
+            }
+        }
+
+        function showVictory() {
+            stopComboTimer();
+            gameBoard.classList.add('hidden');
+            victoryMessage.classList.remove('hidden');
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+    </script>
+</body>
+</html>
